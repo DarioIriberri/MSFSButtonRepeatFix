@@ -46,6 +46,9 @@
 			</key_mapping>
 		</action>
 		<repeat>true</repeat>
+		<init_value>0</init_value>
+		<min_value>-0.49</min_value>
+		<max_value>0.49</max_value>
         <step_fine>0.0002</step_fine>
         <step_medium>0.0005</step_medium>
         <step_fast>0.0010</step_fast>
@@ -62,7 +65,7 @@
 		</speed_multiplier>
     </control>
 	
-	<control id="cockpit_zoom"  type="analog" sim_variable="CAMERA_ACTION">	
+	<control id="cockpit_zoom"  type="analog" sim_variable="COCKPIT_CAMERA_ZOOM">	
 		<action id ="cockpit_zoom_in">
 			<direction>1</direction>
 			<joystick_mapping>
@@ -107,12 +110,15 @@
 				<alt>false</alt>
 			</key_mapping>
 		</action>
-		<repeat>false</repeat>
+		<repeat>true</repeat>
+		<init_value>50</init_value>
+		<min_value>0</min_value>
+		<max_value>100</max_value>
         <step_fine>1</step_fine>
         <!--step_medium>0.0005</step_medium>
         <step_fast>0.0005</step_fast>
         <time_threshold_1>0.2</time_threshold_1>
-        <time_threshold_2>1.0</time_threshold_2-->
+        <time_threshold_2>1.0</time_threshold_2>
 		<speed_multiplier>
 			<button_multiplier>
 				<joystick_name>T.Flight Stick X</joystick_name>
@@ -120,8 +126,8 @@
 				<button>0</button>
 			</button_multiplier>
 			<key_multiplier>shift</key_multiplier>
-			<multiplier_factor>2</multiplier_factor>
-		</speed_multiplier>
+			<multiplier_factor>1</multiplier_factor>
+		</speed_multiplier-->
     </control>
 </config>
 

@@ -49,9 +49,12 @@ class AnalogControl(BaseControl):
         super().__init__(ctrl_elem, joysticks_dict)
         self.step_fine: float = float(ctrl_elem.find("step_fine").text) if ctrl_elem.find("step_fine") is not None else 0
         self.step_medium: float = float(ctrl_elem.find("step_medium").text) if ctrl_elem.find("step_medium") is not None else self.step_fine
-        self.step_fast: float = float(ctrl_elem.find("step_fast").text) if ctrl_elem.find("step_fast") is not None else self.step_fine
+        self.step_fast: float = float(ctrl_elem.find("step_fast").text) if ctrl_elem.find("step_fast") is not None else self.step_medium
         self.time_threshold_1: float = float(ctrl_elem.find("time_threshold_1").text) if ctrl_elem.find("time_threshold_1") is not None else 0
         self.time_threshold_2: float = float(ctrl_elem.find("time_threshold_2").text) if ctrl_elem.find("time_threshold_2") is not None else 0
+        self.init_value: float = float(ctrl_elem.find("init_value").text) if ctrl_elem.find("init_value") is not None else 0
+        self.min_value: float = float(ctrl_elem.find("min_value").text) if ctrl_elem.find("min_value") is not None else 0
+        self.max_value: float = float(ctrl_elem.find("max_value").text) if ctrl_elem.find("max_value") is not None else 0
 
         speed_multiplier_config: Dict[str, Any] = {}
         mult_elem = ctrl_elem.find("speed_multiplier")
@@ -79,7 +82,7 @@ class AnalogControl(BaseControl):
         self.joysticks: Dict[str, Any] = joysticks_dict
 
         self.press_timers: Dict[str, float] = {action_id: 0.0 for action_id in self.actions}
-        self.current_value: float = 0.0
+        self.current_value: float = self.init_value
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
         active_action_obj: Optional[Action] = None
@@ -107,7 +110,10 @@ class AnalogControl(BaseControl):
                 step *= multiplier
 
             step *= active_action_obj.direction
+
             self.current_value += step
+            self.current_value = max(self.current_value, self.min_value)
+            self.current_value = min(self.current_value, self.max_value)
 
             trigger_info = active_action_obj.get_active_trigger_description()
             print(f"{active_action_obj.action_id} [{trigger_info}] --- {step} --- {self.current_value}")
