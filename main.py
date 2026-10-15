@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from typing import Dict, Any
 from controls import BaseControl
 
-def load_configurations(xml_path: str, joysticks_dict: Dict[str, Any]) -> Dict[str, BaseControl]:
+def load_configurations(xml_path: str, joysticks_dict: Dict[str, Any], aircraft_requests) -> Dict[str, BaseControl]:
     tree = ET.parse(xml_path)
     root = tree.getroot()
     controls: Dict[str, BaseControl] = {}
@@ -12,7 +12,7 @@ def load_configurations(xml_path: str, joysticks_dict: Dict[str, Any]) -> Dict[s
     for ctrl_elem in root.findall("control"):
         ctrl_id = ctrl_elem.get("id")
         # Delegamos completamente la creación en la clase base
-        controls[ctrl_id] = BaseControl.create(ctrl_elem, joysticks_dict)
+        controls[ctrl_id] = BaseControl.create(ctrl_elem, joysticks_dict, aircraft_requests)
 
     return controls
 
@@ -34,7 +34,7 @@ def main() -> None:
     aq = AircraftRequests(sm, _time=50)
 
     # Cargar configuraciones OOP desde el XML
-    controls = load_configurations("mappings.xml", joysticks)
+    controls = load_configurations("mappings.xml", joysticks, aq)
 
     clock = pygame.time.Clock()
     print("Iniciando bucle principal del puente de hardware OOP...")

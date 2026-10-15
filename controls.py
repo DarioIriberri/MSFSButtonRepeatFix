@@ -5,20 +5,21 @@ import xml.etree.ElementTree as ET
 
 class BaseControl:
     @staticmethod
-    def create(ctrl_elem: Any, joysticks: Dict) -> "BaseControl":
+    def create(ctrl_elem: Any, joysticks: Dict, aircraft_requests) -> "BaseControl":
         ctrl_type = ctrl_elem.get("type", "analog")
 
         if ctrl_type == "analog":
-            return AnalogControl(ctrl_elem, joysticks)
+            return AnalogControl(ctrl_elem, joysticks, aircraft_requests)
         elif ctrl_type == "discrete":
-            return DiscreteControl(ctrl_elem, joysticks)
+            return DiscreteControl(ctrl_elem, joysticks, aircraft_requests)
         else:
             raise ValueError(f"Tipo de control desconocido: {ctrl_type}")
 
     def __init__(
             self,
             ctrl_elem: ET.Element,
-            joysticks_dict: Dict[str, Any]
+            joysticks_dict: Dict[str, Any],
+            aircraft_requests: Any
     ) -> None:
 
         self.id: str = ctrl_elem.get("id")
@@ -34,6 +35,10 @@ class BaseControl:
 
         self.actions: Dict[str, Action] = actions
 
+        self.init_value: float = float(ctrl_elem.find("init_value").text) if ctrl_elem.find("init_value") is not None else 0
+        self.aircraft_requests = aircraft_requests
+        val_from_sim = aircraft_requests.get(self.sim_variable)
+        self.current_value = val_from_sim if val_from_sim is not None else self.init_value
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
         raise NotImplementedError("Implementar en subclases")
@@ -43,16 +48,16 @@ class AnalogControl(BaseControl):
     def __init__(
             self,
             ctrl_elem: ET.Element,
-            joysticks_dict: Dict[str, Any]
+            joysticks_dict: Dict[str, Any],
+            aircraft_requests: Any
     ) -> None:
 
-        super().__init__(ctrl_elem, joysticks_dict)
+        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests)
         self.step_fine: float = float(ctrl_elem.find("step_fine").text) if ctrl_elem.find("step_fine") is not None else 0
         self.step_medium: float = float(ctrl_elem.find("step_medium").text) if ctrl_elem.find("step_medium") is not None else self.step_fine
         self.step_fast: float = float(ctrl_elem.find("step_fast").text) if ctrl_elem.find("step_fast") is not None else self.step_medium
         self.time_threshold_1: float = float(ctrl_elem.find("time_threshold_1").text) if ctrl_elem.find("time_threshold_1") is not None else 0
         self.time_threshold_2: float = float(ctrl_elem.find("time_threshold_2").text) if ctrl_elem.find("time_threshold_2") is not None else 0
-        self.init_value: float = float(ctrl_elem.find("init_value").text) if ctrl_elem.find("init_value") is not None else 0
         self.min_value: float = float(ctrl_elem.find("min_value").text) if ctrl_elem.find("min_value") is not None else 0
         self.max_value: float = float(ctrl_elem.find("max_value").text) if ctrl_elem.find("max_value") is not None else 0
 
@@ -82,7 +87,7 @@ class AnalogControl(BaseControl):
         self.joysticks: Dict[str, Any] = joysticks_dict
 
         self.press_timers: Dict[str, float] = {action_id: 0.0 for action_id in self.actions}
-        self.current_value: float = self.init_value
+
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
         active_action_obj: Optional[Action] = None
@@ -156,9 +161,10 @@ class DiscreteControl(BaseControl):
     def __init__(
             self,
             ctrl_elem: ET.Element,
-            joysticks_dict: Dict[str, Any]
+            joysticks_dict: Dict[str, Any],
+            aircraft_requests
     ) -> None:
-        super().__init__(ctrl_elem, joysticks_dict)
+        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests)
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
         pass

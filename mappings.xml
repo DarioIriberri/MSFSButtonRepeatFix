@@ -114,7 +114,7 @@
 		<init_value>50</init_value>
 		<min_value>0</min_value>
 		<max_value>100</max_value>
-        <step_fine>1</step_fine>
+        <step_fine>2</step_fine>
         <!--step_medium>0.0005</step_medium>
         <step_fast>0.0005</step_fast>
         <time_threshold_1>0.2</time_threshold_1>
