@@ -4,11 +4,11 @@
 		<action id ="elevator_trim_up">
 			<direction>1</direction>
 			<joystick_mapping>
-				<joystick_name>T.Flight Stick X</joystick_name> <!-- Optional: Not needed if mapping keys -->
-				<joystick_guid></joystick_guid> <!-- Optional: Si se deja vacío, selecciona el primer joystick que coincida con el nombre -->
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
 				<!--button_mapping>
 					<button>1</button>
-					<button2>0</button2>
+					<button>0</button>
 				</button_mapping-->
 				<hat_mapping>
 					<hat_index>0</hat_index>
@@ -30,7 +30,7 @@
 				<joystick_guid></joystick_guid>
 				<!--button_mapping>
 					<button>2</button>
-					<button2>0</button2>
+					<button>0</button>
 				</button_mapping-->
 				<hat_mapping>
 					<hat_index>0</hat_index>
@@ -69,11 +69,11 @@
 		<action id ="cockpit_zoom_in">
 			<direction>1</direction>
 			<joystick_mapping>
-				<joystick_name>T.Flight Stick X</joystick_name> <!-- Optional: Not needed if mapping keys -->
-				<joystick_guid></joystick_guid> <!-- Optional: Si se deja vacío, selecciona el primer joystick que coincida con el nombre -->
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
 				<button_mapping>
 					<button>3</button>
-					<button2>0</button2>
+					<button>0</button>
 				</button_mapping>
 				<!--hat_mapping>
 					<hat_index>0</hat_index>
@@ -82,7 +82,7 @@
 				</hat_mapping-->
 			</joystick_mapping>
 			<key_mapping>
-				<key>+</key>
+				<key>plus</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
@@ -91,11 +91,11 @@
 		<action id="cockpit_zoom_out">
 			<direction>-1</direction>
 			<joystick_mapping>
-				<joystick_name>T.Flight Stick X</joystick_name> <!-- Optional: Not needed if mapping keys -->
-				<joystick_guid></joystick_guid> <!-- Optional: Si se deja vacío, selecciona el primer joystick que coincida con el nombre -->
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
 				<button_mapping>
 					<button>1</button>
-					<button2>0</button2>
+					<button>0</button>
 				</button_mapping>
 				<!--hat_mapping>
 					<hat_index>0</hat_index>
@@ -104,7 +104,7 @@
 				</hat_mapping-->
 			</joystick_mapping>
 			<key_mapping>
-				<key>-</key>
+				<key>minus</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
@@ -129,6 +129,32 @@
 			<multiplier_factor>1</multiplier_factor>
 		</speed_multiplier-->
     </control>
+	
+	<control id="freelook_reset" type="discrete" sim_variable="COCKPIT_CAMERA_HEADLOOK">
+		<action id ="freelook_reset">
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>1</button>
+				</button_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>space</key>
+				<shift>true</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<!--ctrl_value>2</ctrl_value-->
+			<key_press>
+				<key>s</key>
+				<shift>true</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_press>
+		</action>
+		<repeat>false</repeat>
+	</control>
 </config>
 
 <!-- 

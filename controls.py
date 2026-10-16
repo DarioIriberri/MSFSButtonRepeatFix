@@ -1,4 +1,6 @@
-import pygame, xml
+import time
+
+import pygame
 from typing import Dict, Optional, Any
 from actions import Action
 import xml.etree.ElementTree as ET
@@ -39,6 +41,18 @@ class BaseControl:
         self.aircraft_requests = aircraft_requests
         val_from_sim = aircraft_requests.get(self.sim_variable)
         self.current_value = val_from_sim if val_from_sim is not None else self.init_value
+
+    def _find_active_action(self):
+        active_action_obj: Optional[Action] = None
+        was_active_action = False
+
+        for act_id, action in self.actions.items():
+            was_active_action = action.was_active()
+            if action.is_active():
+                active_action_obj = action
+                break
+
+        return active_action_obj, was_active_action
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
         raise NotImplementedError("Implementar en subclases")
@@ -90,14 +104,7 @@ class AnalogControl(BaseControl):
 
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
-        active_action_obj: Optional[Action] = None
-        was_active_action = False
-
-        for act_id, action in self.actions.items():
-            was_active_action = action.was_active()
-            if action.is_active():
-                active_action_obj = action
-                break
+        active_action_obj, was_active_action = self._find_active_action()
 
         if active_action_obj and (self.repeat or not was_active_action):
             self.press_timers[active_action_obj.action_id] += dt
@@ -164,7 +171,18 @@ class DiscreteControl(BaseControl):
             joysticks_dict: Dict[str, Any],
             aircraft_requests
     ) -> None:
+
         super().__init__(ctrl_elem, joysticks_dict, aircraft_requests)
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
-        pass
+        try:
+            active_action_obj, was_active_action = self._find_active_action()
+
+            if active_action_obj and (self.repeat or not was_active_action):
+                if active_action_obj.ctrl_value:
+                    aircraft.set(self.sim_variable, active_action_obj.ctrl_value)
+                active_action_obj.execute()
+
+
+        except Exception as e:
+            print(f"Error escribiendo {self.sim_variable}: {e}")

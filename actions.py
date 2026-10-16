@@ -10,7 +10,7 @@ KEY_MAP: Dict[str, int] = {
     "y": 21, "z": 44,
     "0": 11, "1": 2, "2": 3, "3": 4, "4": 5, "5": 6, "6": 7, "7": 8,
     "8": 9, "9": 10,
-    ".": 52, ",": 51, "-": 12, "+": 27, "_": 53,
+    ".": 52, ",": 51, "minus": 12, "plus": 27, "_": 53,
 
     # 2. NUMERIC KEYPAD (NUMPAD)
     "num_0": 82, "num_1": 79, "num_2": 80, "num_3": 81, "num_4": 75,
@@ -47,17 +47,25 @@ class Action:
 
         self.action_id: str = action_elem.get("id")
         self.inputs: List[InputBinding] = []
-        self.direction: int = int(action_elem.find("direction").text)
+        self.direction: int = int(action_elem.find("direction").text if action_elem.find("direction") is not None else 0)
+        self.ctrl_value: float = float(action_elem.find("ctrl_value").text) if action_elem.find("ctrl_value") is not None else 0
 
         joystick_elem = action_elem.find("joystick_mapping")
         if joystick_elem is not None:
             self.inputs.append(JoystickInput(joystick_elem, joysticks_dict))
 
-        key_elem = action_elem.find("key_mapping")
-        if key_elem is not None:
-            self.inputs.append(KeyInput(key_elem))
+        key_mapping_elem = action_elem.find("key_mapping")
+        if key_mapping_elem is not None:
+            self.inputs.append(KeyInput(key_mapping_elem))
 
         self._was_active = False
+
+        key_press_elem = action_elem.find("key_press")
+        if key_press_elem:
+            self.key_press_name: str = key_press_elem.find("key").text.strip().lower()
+            self.ctrl = "ctrl+" if (e := key_press_elem.find("ctrl")) is not None and (e.text or "").strip().lower() == "true" else ""
+            self.shift = "shift+" if (e := key_press_elem.find("shift")) is not None and (e.text or "").strip().lower() == "true" else ""
+            self.alt = "alt+" if (e := key_press_elem.find("alt")) is not None and (e.text or "").strip().lower() == "true" else ""
 
     def is_active(self) -> bool:
         is_active = any(inp.is_active() for inp in self.inputs)
@@ -77,6 +85,11 @@ class Action:
                 elif isinstance(inp, JoystickInput):
                     return f"Joystick (Button/Hat)"
         return "Unknown"
+
+    def execute(self):
+        if self.key_press_name:
+            key_send = self.ctrl + self.shift + self.alt + self.key_press_name
+            keyboard.send(key_send)
 
 class InputBinding:
     def is_active(self) -> bool:
@@ -122,19 +135,22 @@ class JoystickInput(InputBinding):
         if not self.target_joystick:
             return False
 
-        for btn in self.buttons:
-            if btn < self.target_joystick.get_numbuttons():
-                if self.target_joystick.get_button(btn):
-                    return True
+        buttons_active = False
+        if self.buttons:
+            buttons_active = all(
+                btn < self.target_joystick.get_numbuttons() and self.target_joystick.get_button(btn)
+                for btn in self.buttons
+            )
 
+        hat_active = False
         if self.hat:
             hat_idx, target_x, target_y = self.hat
             if hat_idx < self.target_joystick.get_numhats():
                 hx, hy = self.target_joystick.get_hat(hat_idx)
                 if hx == target_x and hy == target_y:
-                    return True
+                    hat_active = True
 
-        return False
+        return buttons_active or hat_active
 
 
 class KeyInput(InputBinding):
@@ -146,8 +162,7 @@ class KeyInput(InputBinding):
 
         key_name = key_elem.find("key").text.strip().lower() if key_elem.find("key") is not None else ""
         self.key_code: Optional[int] = KEY_MAP.get(key_name)
-        self.shift: bool = key_elem.find("shift").text.lower() == "true" if key_elem.find(
-            "shift") is not None else False
+        self.shift: bool = key_elem.find("shift").text.lower() == "true" if key_elem.find("shift") is not None else False
         self.ctrl: bool = key_elem.find("ctrl").text.lower() == "true" if key_elem.find("ctrl") is not None else False
         self.alt: bool = key_elem.find("alt").text.lower() == "true" if key_elem.find("alt") is not None else False
 
