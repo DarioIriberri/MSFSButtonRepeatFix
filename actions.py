@@ -1,4 +1,4 @@
-import keyboard, pydirectinput, time, ctypes
+import keyboard, pydirectinput, time, ctypes, psutil
 from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 import xml.etree.ElementTree as ET
@@ -155,13 +155,22 @@ class Action:
                     return f"Joystick (Button/Hat)"
         return "Unknown"
 
-    def _get_active_window_title(self) -> str:
+    def _is_msfs_active(self) -> bool:
         """Retrieves the title of the active window using the Windows API via ctypes."""
-        hwnd = ctypes.windll.user32.GetForegroundWindow()
-        length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
-        buffer = ctypes.create_unicode_buffer(length + 1)
-        ctypes.windll.user32.GetWindowTextW(hwnd, buffer, length + 1)
-        return buffer.value
+        try:
+            hwnd = ctypes.windll.user32.GetForegroundWindow()
+            if not hwnd:
+                return False
+
+            pid = ctypes.c_ulong()
+            ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+
+            process = psutil.Process(pid.value)
+            return process.name().lower() == "flightsimulator.exe"
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            return False
+        except Exception:
+            return False
 
     def execute(self, aircraft: Any) -> bool:
         """Iterate and execute all sequential steps defined in the XML."""
@@ -173,7 +182,7 @@ class Action:
 
         triggered = False
 
-        if not "Microsoft Flight Simulator" in self._get_active_window_title():
+        if not self._is_msfs_active():
             print(f"     [X] MSFS Window not active!!!!!!!!!!!!!!!!!!!!! Skipping...")
             return False
 
@@ -208,16 +217,17 @@ class Action:
                 if ctrl: pydirectinput.keyDown('ctrl')
                 if alt: pydirectinput.keyDown('alt')
 
+                print('Now press key.....')
                 for r in range(repeats):
                     pydirectinput.press(key_name)
                     print(f"       -> Key '{key_name}' pressed (Repetition {r + 1}/{repeats})")
                     if delay_sec > 0:
                         time.sleep(delay_sec)
 
-                # Release modifiers in reverse order
-                if alt: pydirectinput.keyUp('alt')
-                if ctrl: pydirectinput.keyUp('ctrl')
+                # Release modifiers
                 if shift: pydirectinput.keyUp('shift')
+                if ctrl: pydirectinput.keyUp('ctrl')
+                if alt: pydirectinput.keyUp('alt')
 
                 triggered = True
 
@@ -245,17 +255,6 @@ class Action:
         print(f"[Action {self.action_id}] Execution sequence finished.\n")
         return triggered
 
-    # def _check_execution_conditions(self, aircraft: Any) -> bool:
-    #     """Check if the execution step conditions are met."""
-    #     if not hasattr(self, "execution_steps") or not self.execution_steps:
-    #         return True
-    #
-    #     # Validate that the conditions of the configured steps are met
-    #     for step in self.execution_steps:
-    #         if step["conditions"] and not self._check_conditions(step["conditions"], aircraft):
-    #             return False
-    #
-    #     return True
 
     def _check_conditions(self, conditions: List[Dict[str, Any]], aircraft: Any) -> bool:
         """Evaluate a list of conditions against the current state and trigger."""
@@ -389,7 +388,7 @@ class KeyInput(InputBinding):
 
         # if keyboard.is_pressed(57):
 
-        # print('******************************')
+        # print('****************************************************************************')
         # print('keyboard.is_pressed("shift") = ' + str(keyboard.is_pressed("shift")))
         # print('keyboard.is_pressed("ctrl") = ' + str(keyboard.is_pressed("ctrl")))
         # print('keyboard.is_pressed("alt") = ' + str(keyboard.is_pressed("alt")))
@@ -403,6 +402,11 @@ class KeyInput(InputBinding):
         # print('ctrl_ok) = ' + str(ctrl_ok))
         # print('alt_ok) = ' + str(alt_ok))
         # print('----------------------')
+        # print('-------------------------------------------------------------------------')
+        # print('keyboard.is_pressed("shift") = ' + str(keyboard.is_pressed("shift")))
+        # print('keyboard.is_pressed("ctrl") = ' + str(keyboard.is_pressed("ctrl")))
+        # print('keyboard.is_pressed("alt") = ' + str(keyboard.is_pressed("alt")))
+        # print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
         if keyboard.is_pressed(self.key_code) and shift_ok and ctrl_ok and alt_ok:
             # print('returning trueeeeeeeeee')

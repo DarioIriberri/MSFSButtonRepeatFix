@@ -50,9 +50,9 @@
 		<init_value>0</init_value>
 		<min_value>-0.49</min_value>
 		<max_value>0.49</max_value>
-        <step_fine>0.00005</step_fine>
-        <step_medium>0.0002</step_medium>
-        <step_fast>0.0010</step_fast>
+        <step_fine>  0.00005</step_fine>
+        <step_medium>0.00010</step_medium>
+        <step_fast>  0.00020</step_fast>
         <time_threshold_1>0.2</time_threshold_1>
         <time_threshold_2>1.0</time_threshold_2>
 		<speed_multiplier>
@@ -94,9 +94,9 @@
 		<init_value>50</init_value>
 		<min_value>-1</min_value>
 		<max_value>1</max_value>
-        <step_fine>0.0001</step_fine>
+        <step_fine>  0.0001</step_fine>
         <step_medium>0.0003</step_medium>
-        <step_fast>0.0020</step_fast>
+        <step_fast>  0.0010</step_fast>
         <time_threshold_1>0.2</time_threshold_1>
         <time_threshold_2>1.0</time_threshold_2>
     </control>
@@ -200,9 +200,121 @@
 		</action>
 		<repeat>false</repeat>
 	</control>
+	
+	<control id="cockpit_eyepoint_left" type="discrete">
+		<action id ="cockpit_eyepoint_left">
+			<key_mapping>
+				<key>left</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TRANSLATE COCKPIT VIEW LEFT -->
+				<key>left</key>
+				<shift>true</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</execution>		
+		</action>
+		<repeat>false</repeat>
+	</control>
+	
+	<control id="cockpit_eyepoint_right" type="discrete">
+		<action id ="cockpit_eyepoint_right">
+			<key_mapping>
+				<key>right</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TRANSLATE COCKPIT VIEW RIGHT -->
+				<key>right</key>
+				<shift>true</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</execution>		
+		</action>
+		<repeat>false</repeat>
+	</control>
+	
+	<control id="cockpit_eyepoint_up" type="discrete">
+		<action id ="cockpit_eyepoint_up">
+			<key_mapping>
+				<key>up</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - INCREASE COCKPIT VIEW HEIGHT-->
+				<key>up</key>
+				<shift>true</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</execution>		
+		</action>
+		<repeat>false</repeat>
+	</control>
+	
+	<control id="cockpit_eyepoint_down" type="discrete">
+		<action id ="cockpit_eyepoint_down">
+			<key_mapping>
+				<key>down</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - DECREASE COCKPIT VIEW HEIGHT -->
+				<key>down</key>
+				<shift>true</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</execution>		
+		</action>
+		<repeat>false</repeat>
+	</control>
+	
+	<control id="cockpit_eyepoint_forward" type="discrete">
+		<action id ="cockpit_eyepoint_forward">
+			<key_mapping>
+				<key>up</key>
+				<shift>false</shift> 
+				<ctrl>true</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TRANSLATE COCKPIT VIEW FORWARD -->
+				<key>up</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>true</alt>
+			</execution>		
+		</action>
+		<repeat>false</repeat>
+	</control>
+	
+	<control id="cockpit_eyepoint_backward" type="discrete">
+		<action id ="cockpit_eyepoint_backward">
+			<key_mapping>
+				<key>down</key>
+				<shift>false</shift> 
+				<ctrl>true</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TRANSLATE COCKPIT VIEW BACKWARD -->
+				<key>down</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>true</alt>
+			</execution>		
+		</action>
+		<repeat>false</repeat>
+	</control>
+	
 </config>
 
 <!-- 
+
+DON'T PICK ALT+{KEY} COMBINATIONS FOR THE EXECUTION KEY PRESSES BECAUSE THE MODIFIERS CAN'T GET RELEASED UNTIL THE ALT KEY IS PHYSICALLY RELEASED.
+
 ======================================================================
 MSFS BUTTON REPEAT FIX - KEY IDENTIFIER REFERENCE GUIDE (key="")
 ======================================================================
@@ -261,4 +373,112 @@ MSFS BUTTON REPEAT FIX - KEY IDENTIFIER REFERENCE GUIDE (key="")
 - alt
 
 ======================================================================
+
+{
+    'escape': 1,
+    'esc': 1,
+    'f1': 59,
+    'f2': 60,
+    'f3': 61,
+    'f4': 62,
+    'f5': 63,
+    'f6': 64,
+    'f7': 65,
+    'f8': 66,
+    'f9': 67,
+    'f10': 68,
+    'f11': 87,
+    'f12': 88,
+    'printscreen': 183,
+    'prntscrn': 183,
+    'prtsc': 183,
+    'prtscr': 183,
+    'scrolllock': 70,
+    'pause': 197,
+    '`': 41,
+    '1': 2,
+    '2': 3,
+    '3': 4,
+    '4': 5,
+    '5': 6,
+    '6': 7,
+    '7': 8,
+    '8': 9,
+    '9': 10,
+    '0': 11,
+    '-': 12,
+    '=': 13,
+    'backspace': 14,
+    'insert': 1234,
+    'home': 1223,
+    'pageup': 1225,
+    'pagedown': 1233,
+    'numlock': 69,
+    'divide': 1205,
+    'multiply': 55,
+    'subtract': 74,
+    'add': 78,
+    'decimal': 83,
+    'tab': 15,
+    'q': 16,
+    'w': 17,
+    'e': 18,
+    'r': 19,
+    't': 20,
+    'y': 21,
+    'u': 22,
+    'i': 23,
+    'o': 24,
+    'p': 25,
+    '[': 26,
+    ']': 27,
+    '\\': 43,
+    'del': 1235,
+    'delete': 1235,
+    'end': 1231,
+    'capslock': 58,
+    'a': 30,
+    's': 31,
+    'd': 32,
+    'f': 33,
+    'g': 34,
+    'h': 35,
+    'j': 36,
+    'k': 37,
+    'l': 38,
+    ';': 39,
+    "'": 40,
+    'enter': 28,
+    'return': 28,
+    'shift': 42,
+    'shiftleft': 42,
+    'z': 44,
+    'x': 45,
+    'c': 46,
+    'v': 47,
+    'b': 48,
+    'n': 49,
+    'm': 50,
+    ',': 51,
+    '.': 52,
+    '/': 53,
+    'shiftright': 54,
+    'ctrl': 29,
+    'ctrlleft': 29,
+    'win': 1243,
+    'winleft': 1243,
+    'alt': 56,
+    'altleft': 56,
+    ' ': 57,
+    'space': 57,
+    'altright': 1208,
+    'winright': 1244,
+    'apps': 1245,
+    'ctrlright': 1181,
+    'up': 72,
+    'left': 75,
+    'down': 80,
+    'right': 77
+}
+
 -->
