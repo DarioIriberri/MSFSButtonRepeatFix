@@ -159,7 +159,7 @@
 				<alt>false</alt>
 			</key_mapping>
 			<!--ctrl_value>2.0</ctrl_value-->
-			<execution type="key_press">
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
 				<key>f</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
@@ -175,7 +175,7 @@
 					</condition>
 				</conditions>
 			</execution>
-			<execution type="key_press">
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - RESET COCKPIT VIEW -->
 				<key>space</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>

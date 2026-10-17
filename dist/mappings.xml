@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+	<control id="elevator_trim" type="analog" sim_variable="ELEVATOR_TRIM_POSITION">	
+		<action id ="elevator_trim_up">
+			<direction>1</direction>
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<!--button_mapping>
+					<button>1</button>
+					<button>0</button>
+				</button_mapping-->
+				<hat_mapping>
+					<hat_index>0</hat_index>
+					<hat_x>0</hat_x>
+					<hat_y>-1</hat_y>
+				</hat_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>num_1</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			
+		</action>
+		<action id="elevator_trim_down">
+			<direction>-1</direction>
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name> 
+				<joystick_guid></joystick_guid>
+				<!--button_mapping>
+					<button>2</button>
+					<button>0</button>
+				</button_mapping-->
+				<hat_mapping>
+					<hat_index>0</hat_index>
+					<hat_x>0</hat_x>
+					<hat_y>1</hat_y>
+				</hat_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>num_7</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+		</action>
+		<repeat>true</repeat>
+		<init_value>0</init_value>
+		<min_value>-0.49</min_value>
+		<max_value>0.49</max_value>
+        <step_fine>0.0002</step_fine>
+        <step_medium>0.0005</step_medium>
+        <step_fast>0.0010</step_fast>
+        <time_threshold_1>0.2</time_threshold_1>
+        <time_threshold_2>1.0</time_threshold_2>
+		<speed_multiplier>
+			<button_multiplier>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid> 
+				<button>0</button>
+			</button_multiplier>
+			<key_multiplier>shift</key_multiplier>
+			<multiplier_factor>2</multiplier_factor>
+		</speed_multiplier>
+    </control>
+	
+	<control id="rudder_trim" type="analog" sim_variable="RUDDER_TRIM_PCT">	
+		<action id ="rudder_trim_left">
+			<direction>-1</direction>
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>10</button>
+					<button>0</button>
+				</button_mapping>
+			</joystick_mapping>
+			
+		</action>
+		<action id="rudder_trim_right">
+			<direction>1</direction>
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name> 
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>11</button>
+					<button>0</button>
+				</button_mapping>
+			</joystick_mapping>
+		</action>
+		<repeat>true</repeat>
+		<init_value>50</init_value>
+		<min_value>-1</min_value>
+		<max_value>1</max_value>
+        <step_fine>0.0010</step_fine>
+        <step_medium>0.0020</step_medium>
+        <step_fast>0.0050</step_fast>
+        <time_threshold_1>0.2</time_threshold_1>
+        <time_threshold_2>1.0</time_threshold_2>
+    </control>
+	
+	<control id="cockpit_zoom"  type="analog" sim_variable="COCKPIT_CAMERA_ZOOM">	
+		<action id ="cockpit_zoom_in">
+			<direction>1</direction>
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>3</button>
+					<button>0</button>
+				</button_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>plus</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+		</action>
+		<action id="cockpit_zoom_out">
+			<direction>-1</direction>
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>1</button>
+					<button>0</button>
+				</button_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>minus</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+		</action>
+		<repeat>true</repeat>
+		<init_value>50</init_value>
+		<min_value>0</min_value>
+		<max_value>100</max_value>
+        <step_fine>2</step_fine>
+    </control>
+
+	<control id="freelook_reset" type="discrete">
+		<action id ="freelook_reset">
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>1</button>
+				</button_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>space</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<!--ctrl_value>2.0</ctrl_value-->
+			<execution type="key_press">
+				<key>f</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>true</alt>
+				<!--repeats>1</repeats-->
+				<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
+				<conditions>
+					<!--condition type="key_activated">
+						<value>true</value>
+					</condition-->
+					<condition type="aircraft_request" id="COCKPIT_CAMERA_HEADLOOK">
+						<value>1.0</value>
+					</condition>
+				</conditions>
+			</execution>
+			<execution type="key_press">
+				<key>space</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+				<!--repeats>1</repeats-->
+				<!--delay_ms_after_pressed>500</delay_ms_after_pressed-->
+			</execution>			
+			<!--execution type="sim_var">
+				<sim_var_name>CAMERA_ACTION_COCKPIT_VIEW_RESET</sim_var_name>
+				<repeats>1</repeats>
+				<delay_ms_after_pressed>2000</delay_ms_after_pressed>
+				<conditions/>
+			</execution-->
+		</action>
+		<repeat>false</repeat>
+	</control>
+</config>
+
+<!-- 
+======================================================================
+MSFS BUTTON REPEAT FIX - KEY IDENTIFIER REFERENCE GUIDE (key="")
+======================================================================
+
+1. ALPHANUMERIC & SYMBOLS
+**********************************************************************
+- Letters: "a", "b", "c", ..., "z" (always lowercase)
+- Numbers (main keyboard): "0", "1", "2", ..., "9"
+- Common symbols: ".", ",", "-", "+", "_", "/", etc.
+
+2. NUMERIC KEYPAD (NUMPAD)
+**********************************************************************
+- num_0 through num_9 
+- 
+
+3. FUNCTION KEYS
+**********************************************************************
+- f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12
+
+4. NAVIGATION & EDITING KEYS
+**********************************************************************
+- insert
+- home
+- end
+- page_up
+- page_down
+- delete
+
+5. ARROW KEYS
+**********************************************************************
+- up
+- down
+- left
+- right
+
+6. SPECIAL CONTROL & EDITING KEYS
+**********************************************************************
+- space
+- enter
+- tab
+- backspace
+- esc
+- caps_lock
+
+7. SYSTEM & MULTIMEDIA KEYS
+**********************************************************************
+- print_screen
+- scroll_lock
+- pause
+- num_lock
+
+8. MODIFIERS
+**********************************************************************
+- shift
+- ctrl
+- alt
+
+======================================================================
+-->
