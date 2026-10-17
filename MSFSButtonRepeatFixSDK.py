@@ -40,7 +40,7 @@ def monitor_msfs_process() -> None:
             # Query Windows tasklist for the MSFS process (runs safely in background)
             t1 = time.time()
             output = subprocess.check_output('tasklist /FI "IMAGENAME eq FlightSimulator.exe"', shell=True, text=True)
-            print('Checked MSFS .................................. ' + str(time.time() - t1))
+            # print('Checked MSFS .................................. ' + str(time.time() - t1))
             if "FlightSimulator.exe" not in output:
                 print("MSFS process no longer detected in background monitor.")
                 _msfs_is_running = False
