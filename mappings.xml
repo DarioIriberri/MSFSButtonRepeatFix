@@ -50,8 +50,8 @@
 		<init_value>0</init_value>
 		<min_value>-0.49</min_value>
 		<max_value>0.49</max_value>
-        <step_fine>0.0002</step_fine>
-        <step_medium>0.0005</step_medium>
+        <step_fine>0.0001</step_fine>
+        <step_medium>0.0003</step_medium>
         <step_fast>0.0010</step_fast>
         <time_threshold_1>0.2</time_threshold_1>
         <time_threshold_2>1.0</time_threshold_2>
@@ -94,9 +94,9 @@
 		<init_value>50</init_value>
 		<min_value>-1</min_value>
 		<max_value>1</max_value>
-        <step_fine>0.0010</step_fine>
-        <step_medium>0.0020</step_medium>
-        <step_fast>0.0050</step_fast>
+        <step_fine>0.0001</step_fine>
+        <step_medium>0.0003</step_medium>
+        <step_fast>0.0020</step_fast>
         <time_threshold_1>0.2</time_threshold_1>
         <time_threshold_2>1.0</time_threshold_2>
     </control>
