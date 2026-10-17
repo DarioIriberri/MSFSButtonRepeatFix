@@ -11,7 +11,7 @@ def load_configurations(xml_path: str, joysticks_dict: Dict[str, Any], aircraft_
 
     for ctrl_elem in root.findall("control"):
         ctrl_id = ctrl_elem.get("id")
-        # Delegamos completamente la creación en la clase base
+        # Delegate creation entirely to the base class
         controls[ctrl_id] = BaseControl.create(ctrl_elem, joysticks_dict, aircraft_requests)
 
     return controls
@@ -27,28 +27,28 @@ def main() -> None:
 
     for guid, js in joysticks.items():
         js.init()
-        print(f"Joystick detectado: {js.get_name()} [GUID: {guid}]")
+        print(f"Joystick detected: {js.get_name()} [GUID: {guid}]")
 
-    # Inicializar SimConnect
+    # Initialize SimConnect
     sm = SimConnect()
     aq = AircraftRequests(sm, _time=50)
 
-    # Cargar configuraciones OOP desde el XML
+    # Load OOP configurations from XML
     controls = load_configurations("mappings.xml", joysticks, aq)
 
     clock = pygame.time.Clock()
-    print("Iniciando bucle principal del puente de hardware OOP...")
+    print("Starting OOP hardware bridge main loop...")
 
     running = True
     while running:
         # print(f"Headlook={ aq.get("COCKPIT_CAMERA_HEADLOOK")} | Substate={aq.get("CAMERA_SUBSTATE")}")
-        dt = clock.tick(60) / 1000.0  # Delta time en segundos (60 FPS objetivo)
+        dt = clock.tick(60) / 1000.0  # Delta time in seconds (target 60 FPS)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Actualizar todos los controles cargados de forma eficiente
+        # Update all loaded controls efficiently
         for ctrl_id, control_obj in controls.items():
             control_obj.update(aq, dt, joysticks)
 

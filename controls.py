@@ -15,7 +15,7 @@ class BaseControl:
         elif ctrl_type == "discrete":
             return DiscreteControl(ctrl_elem, joysticks, aircraft_requests)
         else:
-            raise ValueError(f"Tipo de control desconocido: {ctrl_type}")
+            raise ValueError(f"Unknown control type: {ctrl_type}")
 
     def __init__(
             self,
@@ -39,8 +39,9 @@ class BaseControl:
 
         self.init_value: float = float(ctrl_elem.find("init_value").text) if ctrl_elem.find("init_value") is not None else 0
         self.aircraft_requests = aircraft_requests
-        val_from_sim = aircraft_requests.get(self.sim_variable)
-        self.current_value = val_from_sim if val_from_sim is not None else self.init_value
+
+        temp_current_val = self.aircraft_requests.get(self.sim_variable) if self.sim_variable else None
+        self.current_value = temp_current_val if temp_current_val is not None else self.init_value
 
     def _find_active_action(self):
         active_action_obj: Optional[Action] = None
@@ -55,7 +56,7 @@ class BaseControl:
         return active_action_obj, was_active_action
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
-        raise NotImplementedError("Implementar en subclases")
+        raise NotImplementedError("Implement in subclasses")
 
 
 class AnalogControl(BaseControl):
@@ -107,6 +108,11 @@ class AnalogControl(BaseControl):
         active_action_obj, was_active_action = self._find_active_action()
 
         if active_action_obj and (self.repeat or not was_active_action):
+            # Sync self.current_value with the sim's
+            live_value = aircraft.get(self.sim_variable)
+            if live_value is not None:
+                self.current_value = live_value
+
             self.press_timers[active_action_obj.action_id] += dt
             duration = self.press_timers[active_action_obj.action_id]
 
@@ -133,7 +139,7 @@ class AnalogControl(BaseControl):
             try:
                 aircraft.set(self.sim_variable, self.current_value)
             except Exception as e:
-                print(f"Error escribiendo {self.sim_variable}: {e}")
+                print(f"Error writing {self.sim_variable}: {e}")
         else:
             for act_id in self.press_timers:
                 self.press_timers[act_id] = 0.0
@@ -184,13 +190,11 @@ class DiscreteControl(BaseControl):
                 aircraft.set(self.sim_variable, active_action_obj.ctrl_value)
                 triggered = True
 
-            if active_action_obj.check_key_press_conditions(aircraft):
-                active_action_obj.key_press_execute()
-                triggered = True
+            triggered = active_action_obj.execute(aircraft)
 
             if triggered:
                 trigger_info = active_action_obj.get_active_trigger_description()
                 print(f"{active_action_obj.action_id} [{trigger_info}] --- {self.current_value}")
 
         # except Exception as e:
-        #     print(f"Error escribiendo {self.sim_variable}: {e}")
+        #     print(f"Error writing {self.sim_variable}: {e}")

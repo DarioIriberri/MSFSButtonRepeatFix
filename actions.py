@@ -1,4 +1,4 @@
-import keyboard, pydirectinput, time
+import keyboard, pydirectinput, time, ctypes
 from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 import xml.etree.ElementTree as ET
@@ -50,55 +50,91 @@ KEY_MAP: Dict[str, int] = {
 
 class Action:
     def __init__(
-            self, action_elem: ET.Element,
+            self,
+            action_elem: ET.Element,
             joysticks_dict: Dict[str, Any]
-    )-> None:
-
-        class ConditionType(str, Enum):
-            KEY_ACTIVATED = "key_activated"
-            JOYSTICK_ACTIVATED = "joystick_activated"
-            AIRCRAFT_REQUEST = "aircraft_request"
+    ) -> None:
 
         self.action_id: str = action_elem.get("id")
         self.inputs: List[InputBinding] = []
-        self.direction: int = int(action_elem.find("direction").text if action_elem.find("direction") is not None else 0)
-        self.ctrl_value: float = float(action_elem.find("ctrl_value").text) if action_elem.find("ctrl_value") is not None else 0
 
+        # Direction and analog control value (if applicable)
+        dir_elem = action_elem.find("direction")
+        self.direction: int = int(dir_elem.text) if dir_elem is not None and dir_elem.text else 0
+
+        ctrl_elem = action_elem.find("ctrl_value")
+        self.ctrl_value: float = float(ctrl_elem.text) if ctrl_elem is not None and ctrl_elem.text else 0
+
+        # Joystick mapping
         joystick_elem = action_elem.find("joystick_mapping")
         if joystick_elem is not None:
             self.inputs.append(JoystickInput(joystick_elem, joysticks_dict))
 
+        # Main activation key mapping
         key_mapping_elem = action_elem.find("key_mapping")
         if key_mapping_elem is not None:
             self.inputs.append(KeyInput(key_mapping_elem))
 
         self._was_active = False
 
-        self.key_press_elem = action_elem.find("key_press")
-        if self.key_press_elem:
-            self.key_press_name: str = self.key_press_elem.find("key").text.strip().lower() if self.key_press_elem.find("key") is not None else None
-            self.key_press_shift: bool = (s.text.strip().lower() == "true") if (s := self.key_press_elem.find("shift")) is not None and s.text else False
-            self.key_press_ctrl: bool = (c.text.strip().lower() == "true") if (c := self.key_press_elem.find("ctrl")) is not None and c.text else False
-            self.key_press_alt: bool = (a.text.strip().lower() == "true") if (a := self.key_press_elem.find("alt")) is not None and a.text else False
+        # Unified list of execution steps based on the 'type' attribute
+        self.execution_steps: List[Dict[str, Any]] = []
 
-            self.skip_sim_call: bool = (k.text.strip().lower() == "true") if (k := self.key_press_elem.find("skip_sim_call")) is not None and a.text else False
-            key_press_conditions_elem = self.key_press_elem.find("conditions")
-            self.key_press_conditions: List[Dict[str, Any]] = []
+        for exec_elem in action_elem.findall("execution"):
+            exec_type = exec_elem.get("type")
+            r_elem = exec_elem.find("repeats")
+            d_elem = exec_elem.find("delay_ms_after_pressed")
 
-            if key_press_conditions_elem is not None:
-                for cond_elem in key_press_conditions_elem.findall("condition"):
+            # Parse common conditions for this execution step
+            step_conditions = []
+            conds_elem = exec_elem.find("conditions")
+            if conds_elem is not None:
+                for cond_elem in conds_elem.findall("condition"):
                     raw_type = cond_elem.get("type")
-
                     try:
-                        cond_type = ConditionType(raw_type)  # Lo valida contra el Enum
+                        cond_type = ConditionType(raw_type)
                     except ValueError:
-                        raise ValueError(f"Tipo de condición desconocido en XML: {raw_type}")
+                        raise ValueError(f"Unknown condition type in XML: {raw_type}")
 
-                    self.key_press_conditions.append({
+                    step_conditions.append({
                         "type": cond_type,
                         "id": cond_elem.get("id"),
-                        "value": cond_elem.find("value").text.strip() if cond_elem.find("value") is not None else ""
+                        "value": cond_elem.find("value").text.strip() if cond_elem.find(
+                            "value") is not None and cond_elem.find("value").text else ""
                     })
+
+            # Base step structure
+            step_data = {
+                "type": exec_type,
+                "repeats": int(r_elem.text.strip()) if r_elem is not None and r_elem.text else 1,
+                "delay_ms": int(d_elem.text.strip()) if d_elem is not None and d_elem.text else 0,
+                "conditions": step_conditions
+            }
+
+            # Fill specific data based on execution type
+            if exec_type == "key_press":
+                k_elem = exec_elem.find("key")
+                s_elem = exec_elem.find("shift")
+                c_elem = exec_elem.find("ctrl")
+                a_elem = exec_elem.find("alt")
+
+                step_data.update({
+                    "key_name": k_elem.text.strip().lower() if k_elem is not None and k_elem.text else None,
+                    "shift": s_elem.text.strip().lower() == "true" if s_elem is not None and s_elem.text else False,
+                    "ctrl": c_elem.text.strip().lower() == "true" if c_elem is not None and c_elem.text else False,
+                    "alt": a_elem.text.strip().lower() == "true" if a_elem is not None and a_elem.text else False,
+                })
+
+            elif exec_type == "sim_var":
+                name_elem = exec_elem.find("sim_var_name")
+                val_elem = exec_elem.find("value")  # Optional in case you want to pass a direct value
+
+                step_data.update({
+                    "name": name_elem.text.strip() if name_elem is not None and name_elem.text else None,
+                    "value": float(val_elem.text.strip()) if val_elem is not None and val_elem.text else 1.0
+                })
+
+            self.execution_steps.append(step_data)
 
     def is_active(self) -> bool:
         is_active = any(inp.is_active() for inp in self.inputs)
@@ -111,44 +147,127 @@ class Action:
     def get_active_trigger_description(self) -> str:
         for inp in self.inputs:
             if inp.is_active():
-                # Si es una tecla del teclado
+                # If it is a keyboard key
                 if isinstance(inp, KeyInput):
                     return f"Key: {inp.key_code}"
-                # Si es un joystick (puedes adaptarlo según los atributos que tenga JoystickInput)
+                # If it is a joystick (you can adapt it according to JoystickInput attributes)
                 elif isinstance(inp, JoystickInput):
                     return f"Joystick (Button/Hat)"
         return "Unknown"
 
-    def key_press_execute(self):
-        # t1 = time.time()
-        if self.key_press_elem:
-            if self.key_press_shift: pydirectinput.keyDown('shift')
-            if self.key_press_ctrl: pydirectinput.keyDown('ctrl')
-            if self.key_press_alt: pydirectinput.keyDown('alt')
+    def _get_active_window_title(self) -> str:
+        """Retrieves the title of the active window using the Windows API via ctypes."""
+        hwnd = ctypes.windll.user32.GetForegroundWindow()
+        length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+        buffer = ctypes.create_unicode_buffer(length + 1)
+        ctypes.windll.user32.GetWindowTextW(hwnd, buffer, length + 1)
+        return buffer.value
 
-            # print('Modifiers down after ... ' + str(time.time() - t1))
-            pydirectinput.press(self.key_press_name)
-            # print('Keypress after ... ' + str(time.time() - t1))
+    def execute(self, aircraft: Any) -> bool:
+        """Iterate and execute all sequential steps defined in the XML."""
+        if not hasattr(self, "execution_steps") or not self.execution_steps:
+            print(f"[Action {self.action_id}] No execution steps defined.")
+            return False
 
-            if self.key_press_shift: pydirectinput.keyUp('shift')
-            if self.key_press_ctrl: pydirectinput.keyUp('ctrl')
-            if self.key_press_alt: pydirectinput.keyUp('alt')
-        # print('Modifiers up after ... ' + str(time.time() - t1))
+        print(f"\n[Action {self.action_id}] Starting sequence of {len(self.execution_steps)} step(s)...")
 
-    def check_key_press_conditions(self, aircraft: Any) -> bool:
-        if not hasattr(self, "key_press_conditions") or not self.key_press_conditions:
+        triggered = False
+
+        if not "Microsoft Flight Simulator" in self._get_active_window_title():
+            print(f"     [X] MSFS Window not active!!!!!!!!!!!!!!!!!!!!! Skipping...")
+            return False
+
+        for idx, step in enumerate(self.execution_steps):
+            step_type = step["type"]
+            print(f"  -> [Step {idx + 1}] Type: '{step_type}'")
+
+            # 1. Validate the specific conditions of this step before executing it
+            if not self._check_conditions(step["conditions"], aircraft):
+                print(f"     [X] Condition NOT met for step {idx + 1} ({step_type}). Skipping...")
+                continue
+
+            print(f"     [OK] Conditions passed for step {idx + 1}.")
+            repeats = step["repeats"]
+            delay_sec = step["delay_ms"] / 1000.0  # Convert milliseconds to seconds
+
+            # 2. Execution based on step type
+            if step_type == "key_press":
+                key_name = step["key_name"]
+                if not key_name:
+                    print(f"     [!] 'key_name' empty in step {idx + 1}. Skipping.")
+                    continue
+
+                shift = step["shift"]
+                ctrl = step["ctrl"]
+                alt = step["alt"]
+                print(
+                    f"     [Keypress] Key: '{key_name}' | Modifiers -> Shift: {shift}, Ctrl: {ctrl}, Alt: {alt} | Repeats: {repeats}")
+
+                # Activate global modifiers for this block
+                if shift: pydirectinput.keyDown('shift')
+                if ctrl: pydirectinput.keyDown('ctrl')
+                if alt: pydirectinput.keyDown('alt')
+
+                for r in range(repeats):
+                    pydirectinput.press(key_name)
+                    print(f"       -> Key '{key_name}' pressed (Repetition {r + 1}/{repeats})")
+                    if delay_sec > 0:
+                        time.sleep(delay_sec)
+
+                # Release modifiers in reverse order
+                if alt: pydirectinput.keyUp('alt')
+                if ctrl: pydirectinput.keyUp('ctrl')
+                if shift: pydirectinput.keyUp('shift')
+
+                triggered = True
+
+            elif step_type == "sim_var":
+                sim_name = step["name"]
+                sim_val = step["value"]
+                if not sim_name:
+                    print(f"     [!] 'sim_var_name' empty in step {idx + 1}. Skipping.")
+                    continue
+
+                print(f"     [SimVar] Writing '{sim_name}' = {sim_val} | Repeats: {repeats}")
+                for r in range(repeats):
+                    try:
+                        aircraft.set(sim_name, sim_val)
+                        triggered = True
+                        print(f"       -> Written {sim_name} = {sim_val} (Repetition {r + 1}/{repeats})")
+                    except Exception as e:
+                        print(f"     [Error] Error writing sim_var {sim_name}: {e}")
+
+                    if delay_sec > 0:
+                        time.sleep(delay_sec)
+
+        print(f"[Action {self.action_id}] Execution sequence finished.\n")
+        return triggered
+
+    # def _check_execution_conditions(self, aircraft: Any) -> bool:
+    #     """Check if the execution step conditions are met."""
+    #     if not hasattr(self, "execution_steps") or not self.execution_steps:
+    #         return True
+    #
+    #     # Validate that the conditions of the configured steps are met
+    #     for step in self.execution_steps:
+    #         if step["conditions"] and not self._check_conditions(step["conditions"], aircraft):
+    #             return False
+    #
+    #     return True
+
+    def _check_conditions(self, conditions: List[Dict[str, Any]], aircraft: Any) -> bool:
+        """Evaluate a list of conditions against the current state and trigger."""
+        if not conditions:
             return True
 
-        # Averiguamos qué disparó la acción usando el método que ya tenemos
         current_trigger = self.get_action_trigger_type()
 
-        for cond in self.key_press_conditions:
+        for cond in conditions:
             ctype = cond["type"]
             cval = cond["value"].lower()
 
             if ctype == ConditionType.KEY_ACTIVATED:
                 expected = (cval == "true")
-                # Comparamos si el trigger actual coincide con lo que pide el XML
                 is_key_active = (current_trigger == ConditionType.KEY_ACTIVATED)
                 if is_key_active != expected:
                     return False
@@ -181,7 +300,7 @@ class Action:
 
 class InputBinding:
     def is_active(self) -> bool:
-        raise NotImplementedError("Implementar en subclases de entrada")
+        raise NotImplementedError("Implement in input subclasses")
 
 
 class JoystickInput(InputBinding):
@@ -225,10 +344,14 @@ class JoystickInput(InputBinding):
 
         buttons_active = False
         if self.buttons:
-            buttons_active = all(
-                btn < self.target_joystick.get_numbuttons() and self.target_joystick.get_button(btn)
-                for btn in self.buttons
-            )
+            num_buttons = self.target_joystick.get_numbuttons()
+            buttons_active = True
+            for i in range(num_buttons):
+                pressed = self.target_joystick.get_button(i)
+                should_press = i in self.buttons
+                if pressed != should_press:
+                    buttons_active = False
+                    break
 
         hat_active = False
         if self.hat:
