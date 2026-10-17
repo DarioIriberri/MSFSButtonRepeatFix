@@ -1,6 +1,14 @@
-import keyboard
+import keyboard, pydirectinput, time
 from typing import Dict, List, Optional, Tuple, Any
+from enum import Enum
 import xml.etree.ElementTree as ET
+
+class ConditionType(str, Enum):
+    KEY_ACTIVATED = "key_activated"
+    JOYSTICK_ACTIVATED = "joystick_activated"
+    AIRCRAFT_REQUEST = "aircraft_request"
+
+pydirectinput.PAUSE = 0.02
 
 KEY_MAP: Dict[str, int] = {
     # 1. ALPHANUMERIC & SYMBOLS
@@ -39,11 +47,17 @@ KEY_MAP: Dict[str, int] = {
     "shift": 42, "left_shift": 42, "right_shift": 54, "ctrl": 29, "alt": 56,
 }
 
+
 class Action:
     def __init__(
             self, action_elem: ET.Element,
             joysticks_dict: Dict[str, Any]
     )-> None:
+
+        class ConditionType(str, Enum):
+            KEY_ACTIVATED = "key_activated"
+            JOYSTICK_ACTIVATED = "joystick_activated"
+            AIRCRAFT_REQUEST = "aircraft_request"
 
         self.action_id: str = action_elem.get("id")
         self.inputs: List[InputBinding] = []
@@ -60,12 +74,31 @@ class Action:
 
         self._was_active = False
 
-        key_press_elem = action_elem.find("key_press")
-        if key_press_elem:
-            self.key_press_name: str = key_press_elem.find("key").text.strip().lower()
-            self.ctrl = "ctrl+" if (e := key_press_elem.find("ctrl")) is not None and (e.text or "").strip().lower() == "true" else ""
-            self.shift = "shift+" if (e := key_press_elem.find("shift")) is not None and (e.text or "").strip().lower() == "true" else ""
-            self.alt = "alt+" if (e := key_press_elem.find("alt")) is not None and (e.text or "").strip().lower() == "true" else ""
+        self.key_press_elem = action_elem.find("key_press")
+        if self.key_press_elem:
+            self.key_press_name: str = self.key_press_elem.find("key").text.strip().lower() if self.key_press_elem.find("key") is not None else None
+            self.key_press_shift: bool = (s.text.strip().lower() == "true") if (s := self.key_press_elem.find("shift")) is not None and s.text else False
+            self.key_press_ctrl: bool = (c.text.strip().lower() == "true") if (c := self.key_press_elem.find("ctrl")) is not None and c.text else False
+            self.key_press_alt: bool = (a.text.strip().lower() == "true") if (a := self.key_press_elem.find("alt")) is not None and a.text else False
+
+            self.skip_sim_call: bool = (k.text.strip().lower() == "true") if (k := self.key_press_elem.find("skip_sim_call")) is not None and a.text else False
+            key_press_conditions_elem = self.key_press_elem.find("conditions")
+            self.key_press_conditions: List[Dict[str, Any]] = []
+
+            if key_press_conditions_elem is not None:
+                for cond_elem in key_press_conditions_elem.findall("condition"):
+                    raw_type = cond_elem.get("type")
+
+                    try:
+                        cond_type = ConditionType(raw_type)  # Lo valida contra el Enum
+                    except ValueError:
+                        raise ValueError(f"Tipo de condición desconocido en XML: {raw_type}")
+
+                    self.key_press_conditions.append({
+                        "type": cond_type,
+                        "id": cond_elem.get("id"),
+                        "value": cond_elem.find("value").text.strip() if cond_elem.find("value") is not None else ""
+                    })
 
     def is_active(self) -> bool:
         is_active = any(inp.is_active() for inp in self.inputs)
@@ -86,10 +119,65 @@ class Action:
                     return f"Joystick (Button/Hat)"
         return "Unknown"
 
-    def execute(self):
-        if self.key_press_name:
-            key_send = self.ctrl + self.shift + self.alt + self.key_press_name
-            keyboard.send(key_send)
+    def key_press_execute(self):
+        # t1 = time.time()
+        if self.key_press_elem:
+            if self.key_press_shift: pydirectinput.keyDown('shift')
+            if self.key_press_ctrl: pydirectinput.keyDown('ctrl')
+            if self.key_press_alt: pydirectinput.keyDown('alt')
+
+            # print('Modifiers down after ... ' + str(time.time() - t1))
+            pydirectinput.press(self.key_press_name)
+            # print('Keypress after ... ' + str(time.time() - t1))
+
+            if self.key_press_shift: pydirectinput.keyUp('shift')
+            if self.key_press_ctrl: pydirectinput.keyUp('ctrl')
+            if self.key_press_alt: pydirectinput.keyUp('alt')
+        # print('Modifiers up after ... ' + str(time.time() - t1))
+
+    def check_key_press_conditions(self, aircraft: Any) -> bool:
+        if not hasattr(self, "key_press_conditions") or not self.key_press_conditions:
+            return True
+
+        # Averiguamos qué disparó la acción usando el método que ya tenemos
+        current_trigger = self.get_action_trigger_type()
+
+        for cond in self.key_press_conditions:
+            ctype = cond["type"]
+            cval = cond["value"].lower()
+
+            if ctype == ConditionType.KEY_ACTIVATED:
+                expected = (cval == "true")
+                # Comparamos si el trigger actual coincide con lo que pide el XML
+                is_key_active = (current_trigger == ConditionType.KEY_ACTIVATED)
+                if is_key_active != expected:
+                    return False
+
+            elif ctype == ConditionType.JOYSTICK_ACTIVATED:
+                expected = (cval == "true")
+                is_joystick_active = (current_trigger == ConditionType.JOYSTICK_ACTIVATED)
+                if is_joystick_active != expected:
+                    return False
+
+            elif ctype == ConditionType.AIRCRAFT_REQUEST:
+                sim_var = cond["id"]
+                try:
+                    current_val = aircraft.get(sim_var)
+                    if str(current_val).lower() != cval:
+                        return False
+                except Exception:
+                    return False
+
+        return True
+
+    def get_action_trigger_type(self) -> str:
+        for inp in self.inputs:
+            if inp.is_active():
+                if isinstance(inp, KeyInput):
+                    return "key_activated"
+                elif isinstance(inp, JoystickInput):
+                    return "joystick_activated"
+        return "none"
 
 class InputBinding:
     def is_active(self) -> bool:
@@ -173,5 +261,24 @@ class KeyInput(InputBinding):
         shift_ok = keyboard.is_pressed("shift") == self.shift
         ctrl_ok = keyboard.is_pressed("ctrl") == self.ctrl
         alt_ok = keyboard.is_pressed("alt") == self.alt
+
+        # if keyboard.is_pressed(57):
+
+        # print('******************************')
+        # print('keyboard.is_pressed("shift") = ' + str(keyboard.is_pressed("shift")))
+        # print('keyboard.is_pressed("ctrl") = ' + str(keyboard.is_pressed("ctrl")))
+        # print('keyboard.is_pressed("alt") = ' + str(keyboard.is_pressed("alt")))
+        # print('self.shift ' + str(self.shift))
+        # print('self.ctrl ' + str(self.ctrl))
+        # print('self.alt ' + str(self.alt))
+        # print('space PRESSED!!!!!!!!!!!!')
+        # print('----------------------')
+        # print('----------------------')
+        # print('shift_ok) = ' + str(shift_ok))
+        # print('ctrl_ok) = ' + str(ctrl_ok))
+        # print('alt_ok) = ' + str(alt_ok))
+        # print('----------------------')
+
         if keyboard.is_pressed(self.key_code) and shift_ok and ctrl_ok and alt_ok:
+            # print('returning trueeeeeeeeee')
             return True

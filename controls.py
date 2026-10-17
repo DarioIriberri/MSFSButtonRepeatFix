@@ -175,14 +175,22 @@ class DiscreteControl(BaseControl):
         super().__init__(ctrl_elem, joysticks_dict, aircraft_requests)
 
     def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
-        try:
-            active_action_obj, was_active_action = self._find_active_action()
+        # try:
+        active_action_obj, was_active_action = self._find_active_action()
 
-            if active_action_obj and (self.repeat or not was_active_action):
-                if active_action_obj.ctrl_value:
-                    aircraft.set(self.sim_variable, active_action_obj.ctrl_value)
-                active_action_obj.execute()
+        if active_action_obj and (self.repeat or not was_active_action):
+            triggered = False
+            if active_action_obj.ctrl_value:
+                aircraft.set(self.sim_variable, active_action_obj.ctrl_value)
+                triggered = True
 
+            if active_action_obj.check_key_press_conditions(aircraft):
+                active_action_obj.key_press_execute()
+                triggered = True
 
-        except Exception as e:
-            print(f"Error escribiendo {self.sim_variable}: {e}")
+            if triggered:
+                trigger_info = active_action_obj.get_active_trigger_description()
+                print(f"{active_action_obj.action_id} [{trigger_info}] --- {self.current_value}")
+
+        # except Exception as e:
+        #     print(f"Error escribiendo {self.sim_variable}: {e}")

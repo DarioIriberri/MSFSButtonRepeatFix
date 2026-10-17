@@ -41,6 +41,7 @@ def main() -> None:
 
     running = True
     while running:
+        # print(f"Headlook={ aq.get("COCKPIT_CAMERA_HEADLOOK")} | Substate={aq.get("CAMERA_SUBSTATE")}")
         dt = clock.tick(60) / 1000.0  # Delta time en segundos (60 FPS objetivo)
 
         for event in pygame.event.get():

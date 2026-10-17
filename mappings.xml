@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-    <control id="elevator_trim" type="analog" sim_variable="ELEVATOR_TRIM_POSITION">	
+	<control id="elevator_trim" type="analog" sim_variable="ELEVATOR_TRIM_POSITION">	
 		<action id ="elevator_trim_up">
 			<direction>1</direction>
 			<joystick_mapping>
@@ -129,7 +129,7 @@
 			<multiplier_factor>1</multiplier_factor>
 		</speed_multiplier-->
     </control>
-	
+
 	<control id="freelook_reset" type="discrete" sim_variable="COCKPIT_CAMERA_HEADLOOK">
 		<action id ="freelook_reset">
 			<joystick_mapping>
@@ -140,17 +140,27 @@
 				</button_mapping>
 			</joystick_mapping>
 			<key_mapping>
-				<key>space</key>
-				<shift>true</shift> 
+				<key>num_4</key>
+				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<!--ctrl_value>2</ctrl_value-->
+			<!--ctrl_value>2.0</ctrl_value-->
 			<key_press>
-				<key>s</key>
-				<shift>true</shift> 
+				<key>f</key>
+				<shift>false</shift> 
 				<ctrl>false</ctrl>
-				<alt>false</alt>
+				<alt>true</alt>
+				<key_press_repeats>2</key_press_repeats>
+				<skip_sim_call>true</skip_sim_call>
+				<conditions>
+					<!--condition type="key_activated">
+						<value>true</value>
+					</condition-->
+					<condition type="aircraft_request" id="COCKPIT_CAMERA_HEADLOOK">
+						<value>1.0</value>
+					</condition>
+				</conditions>
 			</key_press>
 		</action>
 		<repeat>false</repeat>
