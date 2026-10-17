@@ -50,8 +50,8 @@
 		<init_value>0</init_value>
 		<min_value>-0.49</min_value>
 		<max_value>0.49</max_value>
-        <step_fine>0.0001</step_fine>
-        <step_medium>0.0003</step_medium>
+        <step_fine>0.00005</step_fine>
+        <step_medium>0.0002</step_medium>
         <step_fast>0.0010</step_fast>
         <time_threshold_1>0.2</time_threshold_1>
         <time_threshold_2>1.0</time_threshold_2>
@@ -159,6 +159,14 @@
 				<alt>false</alt>
 			</key_mapping>
 			<!--ctrl_value>2.0</ctrl_value-->
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - CUSTOM CAMERA 0 -->
+				<key>`</key> <!-- This is º in spanish keyboards -->
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+				<!--repeats>1</repeats-->
+				<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
+			</execution>
 			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
 				<key>f</key>
 				<shift>false</shift> 

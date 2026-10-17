@@ -38,7 +38,7 @@ KEY_MAP: Dict[str, int] = {
 
     # 6. SPECIAL CONTROL & EDITING KEYS
     "space": 57, "enter": 28, "tab": 15, "backspace": 14,
-    "esc": 1, "caps_lock": 58,
+    "esc": 1, "caps_lock": 58, "`": 41, # 41 is grave or tilde
 
     # 7. SYSTEM & MULTIMEDIA KEYS
     "print_screen": 55, "scroll_lock": 70, "pause": 69, "num_lock": 69,
@@ -193,6 +193,7 @@ class Action:
             # 2. Execution based on step type
             if step_type == "key_press":
                 key_name = step["key_name"]
+
                 if not key_name:
                     print(f"     [!] 'key_name' empty in step {idx + 1}. Skipping.")
                     continue

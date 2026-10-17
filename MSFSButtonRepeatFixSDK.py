@@ -113,7 +113,7 @@ def main() -> None:
                 control_obj.update(aq, dt, joysticks)
         except Exception as e:
             print(f"SimConnect connection lost: {e}")
-            break
+            raise
 
     pygame.quit()
 
