@@ -159,14 +159,6 @@
 				<alt>false</alt>
 			</key_mapping>
 			<!--ctrl_value>2.0</ctrl_value-->
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - CUSTOM CAMERA 0 -->
-				<key>`</key> <!-- This is º in spanish keyboards -->
-				<shift>false</shift> 
-				<ctrl>false</ctrl>
-				<alt>false</alt>
-				<!--repeats>1</repeats-->
-				<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
-			</execution>
 			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
 				<key>f</key>
 				<shift>false</shift> 
@@ -178,11 +170,19 @@
 					<!--condition type="key_activated">
 						<value>true</value>
 					</condition-->
-					<condition type="aircraft_request" id="COCKPIT_CAMERA_HEADLOOK">
+					<condition type="simvar_check" id="COCKPIT_CAMERA_HEADLOOK">
 						<value>1.0</value>
 					</condition>
 				</conditions>
 			</execution>
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - CUSTOM CAMERA 0 -->
+				<key>`</key> <!-- This is º in spanish keyboards -->
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+				<!--repeats>1</repeats-->
+				<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
+			</execution>			
 			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - RESET COCKPIT VIEW -->
 				<key>space</key>
 				<shift>false</shift> 
@@ -190,8 +190,8 @@
 				<alt>false</alt>
 				<!--repeats>1</repeats-->
 				<!--delay_ms_after_pressed>500</delay_ms_after_pressed-->
-			</execution>			
-			<!--execution type="sim_var">
+			</execution>		
+			<!--execution type="simvar">
 				<sim_var_name>CAMERA_ACTION_COCKPIT_VIEW_RESET</sim_var_name>
 				<repeats>1</repeats>
 				<delay_ms_after_pressed>2000</delay_ms_after_pressed>

@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 class ConditionType(str, Enum):
     KEY_ACTIVATED = "key_activated"
     JOYSTICK_ACTIVATED = "joystick_activated"
-    AIRCRAFT_REQUEST = "aircraft_request"
+    SIMVAR_CHECK = "simvar_check"
 
 pydirectinput.PAUSE = 0.02
 
@@ -201,8 +201,7 @@ class Action:
                 shift = step["shift"]
                 ctrl = step["ctrl"]
                 alt = step["alt"]
-                print(
-                    f"     [Keypress] Key: '{key_name}' | Modifiers -> Shift: {shift}, Ctrl: {ctrl}, Alt: {alt} | Repeats: {repeats}")
+                print(f"     [Keypress] Key: '{key_name}' | Modifiers -> Shift: {shift}, Ctrl: {ctrl}, Alt: {alt} | Repeats: {repeats}")
 
                 # Activate global modifiers for this block
                 if shift: pydirectinput.keyDown('shift')
@@ -235,6 +234,8 @@ class Action:
                         aircraft.set(sim_name, sim_val)
                         triggered = True
                         print(f"       -> Written {sim_name} = {sim_val} (Repetition {r + 1}/{repeats})")
+                        if delay_sec > 0:
+                            time.sleep(delay_sec)
                     except Exception as e:
                         print(f"     [Error] Error writing sim_var {sim_name}: {e}")
 
@@ -279,7 +280,7 @@ class Action:
                 if is_joystick_active != expected:
                     return False
 
-            elif ctype == ConditionType.AIRCRAFT_REQUEST:
+            elif ctype == ConditionType.SIMVAR_CHECK:
                 sim_var = cond["id"]
                 try:
                     current_val = aircraft.get(sim_var)
