@@ -217,7 +217,6 @@ class Action:
                 if ctrl: pydirectinput.keyDown('ctrl')
                 if alt: pydirectinput.keyDown('alt')
 
-                print('Now press key.....')
                 for r in range(repeats):
                     pydirectinput.press(key_name)
                     print(f"       -> Key '{key_name}' pressed (Repetition {r + 1}/{repeats})")

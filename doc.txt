@@ -1,0 +1,162 @@
+CONTROL center_view_and_freelook_reset
+
+*******************************************************************************************************************************************************************************************************************************************************************************************
+
+The goal of this control is to center the view and, if freelook is active, turn it off. Also, if we are in one of the PILOT POSITIONS (mapped to button_0 + POV_LEFT/RIGHT), the view needs to exit from there and move to the default view (saved via the VFR PILOT VIEW SAVE assignment, using the key combination Shift + Ctrl + Alt + C).
+
+The first action must execute the key press corresponding to LOAD CUSTOM CAMERA 0, which should be saved in the same position as VFR PILOT VIEW SAVE using the SAVE CUSTOM CAMERA 0 key assignment.
+Loading CUSTOM CAMERA 0 exits the PILOT POSITIONS used to focus on the instruments, and it also disables FREELOOK MODE, both HOLD and NO HOLD.
+
+Under normal conditions, this should have been enough (followed by sending a RESET COCKPIT VIEW key press to fully reset the view), but a strange behavior happens where FREELOOK somehow gets locked: when CUSTOM CAMERA disables FREELOOK, if we come from FREELOOK HOLD, everything works fine. However, if we are panning the view in FREELOOK MODE (NO HOLD), once the action finishes, we can no longer re-enter FREELOOK HOLD using the right mouse button, for example. Nor can you enter FREELOOK NO HOLD using the middle mouse button. A single click doesn't activate the mode, but it does unlock it—meaning that after that click to activate FREELOOK HOLD, the next click will successfully activate both FREELOOK HOLD and NO HOLD.
+Oddly enough, if we use the RESET COCKPIT VIEW key press instead of CUSTOM CAMERA to reset the view, the lock inverts: FREELOOK mode gets locked after centering the view while in FREELOOK HOLD MODE.
+
+The solution, although imperfect and stupidly convoluted, requires using this sequence of actions:
+
+<control id="center_view_and_freelook_reset" type="discrete">
+	<action id ="center_view_and_freelook_reset">
+		<joystick_mapping>
+			<joystick_name>T.Flight Stick X</joystick_name>
+			<joystick_guid></joystick_guid>
+			<button_mapping>
+				<button>1</button>
+			</button_mapping>
+		</joystick_mapping>
+		<key_mapping>
+			<key>space</key>
+			<shift>false</shift> 
+			<ctrl>false</ctrl>
+			<alt>false</alt>
+		</key_mapping>
+		<!--ctrl_value>2.0</ctrl_value-->
+		<!--execution type="sim_var">
+			<sim_var_name>COCKPIT_CAMERA_HEADLOOK</sim_var_name>
+			<repeats>1</repeats>
+			<value>2.0</value>
+		</execution-->				
+		<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - LOAD CUSTOM CAMERA 0 -->
+			<key>`</key> <!-- This is º in spanish keyboards -->
+			<shift>false</shift> 
+			<ctrl>false</ctrl>
+			<alt>false</alt>
+			<!--repeats>1</repeats-->
+			<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
+		</execution>
+		<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
+			<key>f</key>
+			<shift>false</shift> 
+			<ctrl>false</ctrl>
+			<alt>true</alt>
+		</execution>
+		<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
+			<key>f</key>
+			<shift>false</shift> 
+			<ctrl>false</ctrl>
+			<alt>true</alt>
+			<conditions>
+				<condition type="simvar_check" id="COCKPIT_CAMERA_HEADLOOK">
+					<value>1.0</value>
+				</condition>
+			</conditions>
+		</execution>
+		<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - RESET COCKPIT VIEW -->
+			<key>space</key>
+			<shift>true</shift> 
+			<ctrl>false</ctrl>
+			<alt>false</alt>
+		</execution>
+		<!--execution type="sim_var">
+			<sim_var_name>CAMERA_ACTION_COCKPIT_VIEW_RESET</sim_var_name>
+			<repeats>1</repeats>
+			<delay_ms_after_pressed>2000</delay_ms_after_pressed>
+			<conditions/>
+		</execution-->
+	</action>
+	<repeat>false</repeat>
+</control>
+
+First, we load CUSTOM CAMERA 0 to get out of the pilot views if necessary.
+Next, we do something counterintuitive: we execute TOGGLE COCKPIT FREELOOK without any conditions. This is because even though LOAD CUSTOM CAMERA turns off FREELOOK, if we happen to be in FREELOOK HOLD with the right mouse button held down when the CUSTOM CAMERA action finishes, in some cases it will stay stuck in FREELOOK MODE because the mouse function was still active right after the previous action completed.
+What this achieves is that if FREELOOK was locked, this action unlocks it. If it wasn't locked—just turned off—this action will turn FREELOOK MODE back on, which we don't want. That's where the next action comes in:
+We then run RESET COCKPIT VIEW again, but this time checking its previous state using the COCKPIT_CAMERA_HEADLOOK simvar. If it returns 1.0, it means FREELOOK was left active in the previous step, so we turn it off right away. If FREELOOK wasn't active, it means the previous action successfully unlocked it, and this second execution is skipped since COCKPIT_CAMERA_HEADLOOK returns 2.0 (meaning FREELOOK is disabled).
+Finally, we run one last RESET COCKPIT VIEW action to completely finish centering the view. If any camera drift occurred because FREELOOK was briefly turned on during the first toggle call, this final reset cancels it out immediately.
+
+*******************************************************************************************************************************************************************************************************************************************************************************************
+
+El objetivo de este control es centrar la vista y, si freelook está activo, desactivarlo. Además si estoy en una de las PILOT POSITION (mapeadas a button_0+POV_LEFT/RIGHT), la vista debe salir de ahí para situarse en la vista por defecto (la guardada mediante la asignación VFR PILOT VIEW SAVE, combinación de teclas shift+ctrl+alt+C).
+
+La primera acción debe ser ejecutar la pulsación correspondiente a LOAD CUSTOM CAMERA 0, que deberá estar guardada en la misma posición que VFR PILOT VIEW SAVE mediante la asignación de tecla de SAVE CUSTOM CAMERA 0.
+Al cargar la CUSTOM CAMERA 0, se sale de las PILOT POSITION que sirven para fijar la vista sobre los instrumentos, principalmente, pero también desactiva el modo FREELOOK, tanto HOLD como NO HOLD. 
+
+En condiciones normales, esto debería haber sido suficiente (mandando después una pulsación de RESET COCKPIT VIEW para resetear completamente la vista), pero aparece un extraño comportamiento que hace que el FREELOOK se bloquee de alguna manera: cuando la CUSTOM CAMERA desactiva el FREELOOK, si venimos de FREELOOK HOLD, todo funciona correctamente, pero si estamos paneando la vista de FREELOOK MODE (NO HOLD), al completarse la acción ya no se puede volver al modo FREELOOK HOLD, con el botón derecho del ratón, por ejemplo. Tampoco se puede entrar al modo FREELOOK NO HOLD con por ejemplo, el botón central del ratón. Una pulsación no activa el modo, pero si lo desbloquea, de manera que tras esa pulsación para activar el FREELOOK HOLD, la siguiente pulsación si puede activar tanto FREELOOK HOLD como NO HOLD. 
+Curiosamente, si en lugar de usar la CUSTOM CAMERA para resetear la vista, enviamos la pulsación de tecla correspondiente a RESET COCKPIT VIEW, el bloqueo se invierte: el modo FREELOOK queda bloqueado tras centrar la vista estando en FREELOOK HOLD MODE.
+
+La solución, aunque imperfecta y estúpidamente enrevesada, pasa por usar esta secuencia de acciones:
+
+<control id="center_view_and_freelook_reset" type="discrete">
+	<action id ="center_view_and_freelook_reset">
+		<joystick_mapping>
+			<joystick_name>T.Flight Stick X</joystick_name>
+			<joystick_guid></joystick_guid>
+			<button_mapping>
+				<button>1</button>
+			</button_mapping>
+		</joystick_mapping>
+		<key_mapping>
+			<key>space</key>
+			<shift>false</shift> 
+			<ctrl>false</ctrl>
+			<alt>false</alt>
+		</key_mapping>
+		<!--ctrl_value>2.0</ctrl_value-->
+		<!--execution type="sim_var">
+			<sim_var_name>COCKPIT_CAMERA_HEADLOOK</sim_var_name>
+			<repeats>1</repeats>
+			<value>2.0</value>
+		</execution-->				
+		<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - LOAD CUSTOM CAMERA 0 -->
+			<key>`</key> <!-- This is º in spanish keyboards -->
+			<shift>false</shift> 
+			<ctrl>false</ctrl>
+			<alt>false</alt>
+			<!--repeats>1</repeats-->
+			<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
+		</execution>
+		<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
+			<key>f</key>
+			<shift>false</shift> 
+			<ctrl>false</ctrl>
+			<alt>true</alt>
+		</execution>
+		<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
+			<key>f</key>
+			<shift>false</shift> 
+			<ctrl>false</ctrl>
+			<alt>true</alt>
+			<conditions>
+				<condition type="simvar_check" id="COCKPIT_CAMERA_HEADLOOK">
+					<value>1.0</value>
+				</condition>
+			</conditions>
+		</execution>
+		<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - RESET COCKPIT VIEW -->
+			<key>space</key>
+			<shift>true</shift> 
+			<ctrl>false</ctrl>
+			<alt>false</alt>
+		</execution>
+		<!--execution type="sim_var">
+			<sim_var_name>CAMERA_ACTION_COCKPIT_VIEW_RESET</sim_var_name>
+			<repeats>1</repeats>
+			<delay_ms_after_pressed>2000</delay_ms_after_pressed>
+			<conditions/>
+		</execution-->
+	</action>
+	<repeat>false</repeat>
+</control>
+
+En primer lugar cargamos la CUSTOM CAMERA 0 para salir si es necesario de las PILOT VIEWS.
+A continuación hacemos algo contraintuitivo: ejecutamos el TOGGLE COCKPIT FREELOOK sin condición ninguna. Esto es porque aunque LOAD CUSTOM CAMERA desactiva el FREELOOK, si estamos en FREELOOK HOLD con el botón derecho del ratón apretado cuando se completa la acción de carga de CUSTOM CAMERA,
+al acabar la ejecución, en algunos casos seguirá en FREELOOK MODE, por seguir teniendo la función activada mediante el ratón tras completar la ejecución de la acción anterior.
+Lo que logramos con esto es, si el FREELOOK se había quedado bloqueado, esta acción lo desbloqueará. Si no estaba bloqueado, solo desactivado, esta acción activará el FREELOOK MODE de nuevo, cosa que no queremos, y aquí es donde entra la siguient acción:
+A continuación ejecutamos de nuevo el RESET COCKPIT VIEW, pero esta vez comprobando su estado anterior mediante la sim_var COCKPIT_CAMERA_HEADLOOK. Si ésta devuelve 1.0, el FREELOOK nos habría quedado activado en el paso anterior, con lo que aquí lo desactivamos de inmediato. Si no estaba activado el FREELOOK, significa que la acción anterior pudo haber desbloqueado el FREELOOK exitosamente, y esta segunda ejecución no se completa, al devolver COCKPIT_CAMERA_HEADLOOK el valor 2.0, que corresponde a FREELOOK desactivado.
+Finalemente ejecutamos una última acción, correspondiente al RESET COCKPIT VIEW, para terminar de resetear la vista por completo, y si se ha producido alguna deriva de la cámara cuando en la primera llamada al TOGGLE COCKPIT FREELOOK se activó brevemente el modo FREELOOK, este reseteo de la vista la cancelará de inmediato.

@@ -12,36 +12,42 @@ def monitor_camera_state():
     print("Cambia de vista en el simulador para ver cómo cambia el valor.\n")
 
     start_time = time.time()
-    duration = 30.0  # Duración total en segundos
-    interval = 2  # Intervalo de 500 ms
+    duration = 300.0  # Duración total en segundos
+    interval = 0.5  # Intervalo de 500 ms
 
-    cam = "CAMERA_SUBSTATE"
-    cam = "CAMERA_VIEW_TYPE_AND_INDEX_MAX"
-    cam = "CAMERA_REQUEST_ACTION"
-    cam = "CAMERA_VIEW_TYPE_AND_INDEX"
-    cam = "COCKPIT_CAMERA_HEADLOOK"
+    # sim_var = "CAMERA_SUBSTATE"
+    # sim_var = "CAMERA_VIEW_TYPE_AND_INDEX_MAX"
+    # sim_var = "CAMERA_REQUEST_ACTION"
+    # sim_var = "CAMERA_VIEW_TYPE_AND_INDEX"
+    sim_var= "COCKPIT_CAMERA_HEADLOOK"
 
     time.sleep(2)
-    aq.set(cam, 2.0)
-    print(aq.get(cam))
+    print(f"Was... [{time.strftime("%H:%M:%S")}] {sim_var} -> {aq.get(sim_var)}")
+    aq.set(sim_var, 1.0)
+    print(f"Is.... [{time.strftime("%H:%M:%S")}] {sim_var} -> {aq.get(sim_var)}")
     time.sleep(2)
-    aq.set(cam, 1.0)
-    print(aq.get(cam))
+    aq.set(sim_var, 2.0)
+    print(f"Is.... [{time.strftime("%H:%M:%S")}] {sim_var} -> {aq.get(sim_var)}")
     time.sleep(2)
-    aq.set(cam, 2.0)
-    print(aq.get(cam))
+    # print(aq.get(sim_var))
     # time.sleep(2)
-    # aq.set(cam, 1.0)
-    # print(aq.get(cam))
+    # aq.set(sim_var, 1.0)
+    # print(aq.get(sim_var))
+    # time.sleep(2)
+    # aq.set(sim_var, 2.0)
+    # print(aq.get(sim_var))
+    # time.sleep(2)
+    # aq.set(sim_var, 1.0)
+    # print(aq.get(sim_var))
 
 
-# while time.time() - start_time < duration:
+    # while time.time() - start_time < duration:
     #     # Obtener el valor de la variable CAMERA STATE del simulador
-    #     camera_state = aq.get(cam)
+    #     camera_state = aq.get(sim_var)
     #     timestamp = time.strftime("%H:%M:%S")
-    #     aq.set(cam, 1.0)
+    #     # aq.set(sim_var, 1.0)
     #
-    #     print(f"[{timestamp}] {cam} -> {camera_state}")
+    #     print(f"[{timestamp}] {sim_var} -> {camera_state}")
     #
     #     time.sleep(interval)
     #
