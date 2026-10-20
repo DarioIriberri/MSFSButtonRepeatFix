@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-	<control id="elevator_trim" type="analog" sim_variable="ELEVATOR_TRIM_POSITION">	
+	<control id="elevator_trim" type="analog">	
+		<sim_variable>ELEVATOR_TRIM_POSITION</sim_variable>
 		<action id ="elevator_trim_up">
 			<direction>1</direction>
 			<joystick_mapping>
@@ -66,7 +67,8 @@
 		</speed_multiplier>
     </control>
 	
-	<control id="rudder_trim" type="analog" sim_variable="RUDDER_TRIM_PCT">	
+	<control id="rudder_trim" type="analog">	
+		<sim_variable>RUDDER_TRIM_PCT</sim_variable>
 		<action id ="rudder_trim_left">
 			<direction>-1</direction>
 			<joystick_mapping>
@@ -101,7 +103,8 @@
         <time_threshold_2>1.0</time_threshold_2>
     </control>
 	
-	<control id="cockpit_zoom"  type="analog" sim_variable="COCKPIT_CAMERA_ZOOM">	
+	<control id="cockpit_zoom" type="analog">	
+		<sim_variable>COCKPIT_CAMERA_ZOOM</sim_variable>
 		<action id ="cockpit_zoom_in">
 			<direction>1</direction>
 			<joystick_mapping>
@@ -142,6 +145,65 @@
 		<max_value>100</max_value>
         <step_fine>2</step_fine>
     </control>
+	
+	<control id="brakes" type="discrete">	
+		<action id ="increase_brake">
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>2</button>
+				</button_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>num_0</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<execution type="sim_var">
+				<sim_var_name>BRAKE_LEFT_POSITION</sim_var_name>
+				<repeats>1</repeats>
+				<value>1</value>
+				<delay_ms_after_pressed>10</delay_ms_after_pressed>
+			</execution>
+			<execution type="sim_var">
+				<sim_var_name>BRAKE_RIGHT_POSITION</sim_var_name>
+				<repeats>1</repeats>
+				<value>1</value>
+				<delay_ms_after_pressed>10</delay_ms_after_pressed>
+			</execution>			
+		</action>
+		<repeat>true</repeat>
+    </control>
+	
+	<!--control id="brakes" type="analog">	
+		<sim_variable>BRAKE_LEFT_POSITION</sim_variable>
+		<sim_variable>BRAKE_RIGHT_POSITION</sim_variable>
+		<action id ="increase_brake">
+			<direction>1</direction>
+			<ignore_live_value>true</ignore_live_value>
+			<forced_value_on_release>0</forced_value_on_release>
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>2</button>
+				</button_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>num_0</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+		</action>
+		<repeat>true</repeat>
+		<init_value>0</init_value>
+		<min_value>0</min_value>
+		<max_value>0.5</max_value>
+        <step_fine>0.01</step_fine>
+    </control-->
 
 	<control id="center_view_and_freelook_reset" type="discrete">
 		<action id ="center_view_and_freelook_reset">
@@ -314,175 +376,3 @@
 	</control>
 	
 </config>
-
-<!-- 
-
-DON'T PICK ALT+{KEY} COMBINATIONS FOR THE EXECUTION KEY PRESSES BECAUSE THE MODIFIERS CAN'T GET RELEASED UNTIL THE ALT KEY IS PHYSICALLY RELEASED.
-
-======================================================================
-MSFS BUTTON REPEAT FIX - KEY IDENTIFIER REFERENCE GUIDE (key="")
-======================================================================
-
-1. ALPHANUMERIC & SYMBOLS
-**********************************************************************
-- Letters: "a", "b", "c", ..., "z" (always lowercase)
-- Numbers (main keyboard): "0", "1", "2", ..., "9"
-- Common symbols: ".", ",", "-", "+", "_", "/", etc.
-
-2. NUMERIC KEYPAD (NUMPAD)
-**********************************************************************
-- num_0 through num_9 
-- 
-
-3. FUNCTION KEYS
-**********************************************************************
-- f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12
-
-4. NAVIGATION & EDITING KEYS
-**********************************************************************
-- insert
-- home
-- end
-- page_up
-- page_down
-- delete
-
-5. ARROW KEYS
-**********************************************************************
-- up
-- down
-- left
-- right
-
-6. SPECIAL CONTROL & EDITING KEYS
-**********************************************************************
-- space
-- enter
-- tab
-- backspace
-- esc
-- caps_lock
-
-7. SYSTEM & MULTIMEDIA KEYS
-**********************************************************************
-- print_screen
-- scroll_lock
-- pause
-- num_lock
-
-8. MODIFIERS
-**********************************************************************
-- shift
-- ctrl
-- alt
-
-======================================================================
-
-{
-    'escape': 1,
-    'esc': 1,
-    'f1': 59,
-    'f2': 60,
-    'f3': 61,
-    'f4': 62,
-    'f5': 63,
-    'f6': 64,
-    'f7': 65,
-    'f8': 66,
-    'f9': 67,
-    'f10': 68,
-    'f11': 87,
-    'f12': 88,
-    'printscreen': 183,
-    'prntscrn': 183,
-    'prtsc': 183,
-    'prtscr': 183,
-    'scrolllock': 70,
-    'pause': 197,
-    '`': 41,
-    '1': 2,
-    '2': 3,
-    '3': 4,
-    '4': 5,
-    '5': 6,
-    '6': 7,
-    '7': 8,
-    '8': 9,
-    '9': 10,
-    '0': 11,
-    '-': 12,
-    '=': 13,
-    'backspace': 14,
-    'insert': 1234,
-    'home': 1223,
-    'pageup': 1225,
-    'pagedown': 1233,
-    'numlock': 69,
-    'divide': 1205,
-    'multiply': 55,
-    'subtract': 74,
-    'add': 78,
-    'decimal': 83,
-    'tab': 15,
-    'q': 16,
-    'w': 17,
-    'e': 18,
-    'r': 19,
-    't': 20,
-    'y': 21,
-    'u': 22,
-    'i': 23,
-    'o': 24,
-    'p': 25,
-    '[': 26,
-    ']': 27,
-    '\\': 43,
-    'del': 1235,
-    'delete': 1235,
-    'end': 1231,
-    'capslock': 58,
-    'a': 30,
-    's': 31,
-    'd': 32,
-    'f': 33,
-    'g': 34,
-    'h': 35,
-    'j': 36,
-    'k': 37,
-    'l': 38,
-    ';': 39,
-    "'": 40,
-    'enter': 28,
-    'return': 28,
-    'shift': 42,
-    'shiftleft': 42,
-    'z': 44,
-    'x': 45,
-    'c': 46,
-    'v': 47,
-    'b': 48,
-    'n': 49,
-    'm': 50,
-    ',': 51,
-    '.': 52,
-    '/': 53,
-    'shiftright': 54,
-    'ctrl': 29,
-    'ctrlleft': 29,
-    'win': 1243,
-    'winleft': 1243,
-    'alt': 56,
-    'altleft': 56,
-    ' ': 57,
-    'space': 57,
-    'altright': 1208,
-    'winright': 1244,
-    'apps': 1245,
-    'ctrlright': 1181,
-    'up': 72,
-    'left': 75,
-    'down': 80,
-    'right': 77
-}
-
--->

@@ -38,7 +38,6 @@ def monitor_msfs_process() -> None:
     while _msfs_is_running:
         try:
             # Query Windows tasklist for the MSFS process (runs safely in background)
-            t1 = time.time()
             output = subprocess.check_output('tasklist /FI "IMAGENAME eq FlightSimulator.exe"', shell=True, text=True)
             # print('Checked MSFS .................................. ' + str(time.time() - t1))
             if "FlightSimulator.exe" not in output:
@@ -58,6 +57,10 @@ def main() -> None:
 
     main_th = threading.current_thread()
     print(f"[MAIN THREAD] Running in: {main_th.name} (ID: {main_th.ident})")
+
+    # Start the background monitoring thread so it never blocks the 60 FPS main loop
+    monitor_thread = threading.Thread(target=monitor_msfs_process, daemon=True)
+    monitor_thread.start()
 
     pygame.init()
     pygame.joystick.init()
@@ -87,10 +90,6 @@ def main() -> None:
     # Load OOP configurations from XML using the robust absolute path
     controls = load_configurations(xml_path=mappings_file, joysticks_dict=joysticks, aircraft_requests=aq)
 
-    # Start the background monitoring thread so it never blocks the 60 FPS main loop
-    monitor_thread = threading.Thread(target=monitor_msfs_process, daemon=True)
-    monitor_thread.start()
-
     clock = pygame.time.Clock()
     print("Starting OOP hardware bridge main loop...")
 
@@ -113,7 +112,8 @@ def main() -> None:
                 control_obj.update(aq, dt, joysticks)
         except Exception as e:
             print(f"SimConnect connection lost: {e}")
-            raise
+            traceback.print_exc()
+            break
 
     pygame.quit()
 

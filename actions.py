@@ -58,9 +58,16 @@ class Action:
         self.action_id: str = action_elem.get("id")
         self.inputs: List[InputBinding] = []
 
-        # Direction and analog control value (if applicable)
         dir_elem = action_elem.find("direction")
+
         self.direction: int = int(dir_elem.text) if dir_elem is not None and dir_elem.text else 0
+
+        ignore_live_value_elem = action_elem.find("ignore_live_value")
+        self.ignore_live_value: bool = (ignore_live_value_elem.text.strip().lower() == "true") if ignore_live_value_elem is not None and ignore_live_value_elem.text else False
+        forced_value_on_press_elem = action_elem.find("forced_value_on_press")
+        self.forced_value_on_press: float = float(forced_value_on_press_elem.text) if forced_value_on_press_elem is not None and forced_value_on_press_elem.text else None
+        forced_value_on_release_elem = action_elem.find("forced_value_on_release")
+        self.forced_value_on_release: float = float(forced_value_on_release_elem.text) if forced_value_on_release_elem is not None and forced_value_on_release_elem.text else None
 
         ctrl_elem = action_elem.find("ctrl_value")
         self.ctrl_value: float = float(ctrl_elem.text) if ctrl_elem is not None and ctrl_elem.text else 0
