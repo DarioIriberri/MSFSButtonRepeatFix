@@ -4,17 +4,20 @@ import traceback
 import subprocess
 import threading
 import time, datetime
+from time import sleep
+
 import pygame
 from SimConnect import SimConnect, AircraftRequests
 import xml.etree.ElementTree as ET
 from typing import Dict, Any
 from controls import BaseControl
 
-# Global flag to signal background process monitoring status
+POLLING_FREQUENCY = 60
+
+# Global flag to track MSFS state across threads
 _msfs_is_running = True
 
-
-def load_configurations(xml_path: str, joysticks_dict: Dict[str, Any], aircraft_requests) -> Dict[str, BaseControl]:
+def load_configurations(xml_path: str, joysticks_dict: Dict[str, Any], aircraft_requests, sim_lock) -> Dict[str, BaseControl]:
     """Load control configurations from the XML file."""
     tree = ET.parse(xml_path)
     root = tree.getroot()
@@ -23,7 +26,7 @@ def load_configurations(xml_path: str, joysticks_dict: Dict[str, Any], aircraft_
     for ctrl_elem in root.findall("control"):
         ctrl_id = ctrl_elem.get("id")
         # Delegate creation entirely to the base class
-        controls[ctrl_id] = BaseControl.create(ctrl_elem, joysticks_dict, aircraft_requests)
+        controls[ctrl_id] = BaseControl.create(ctrl_elem, joysticks_dict, aircraft_requests, sim_lock)
 
     return controls
 
@@ -37,18 +40,14 @@ def monitor_msfs_process() -> None:
 
     while _msfs_is_running:
         try:
-            # Query Windows tasklist for the MSFS process (runs safely in background)
-            output = subprocess.check_output('tasklist /FI "IMAGENAME eq FlightSimulator.exe"', shell=True, text=True)
-            # print('Checked MSFS .................................. ' + str(time.time() - t1))
-            if "FlightSimulator.exe" not in output:
-                print("MSFS process no longer detected in background monitor.")
-                _msfs_is_running = False
-                break
+            # Query Windows tasklist for the MSFS process safely in the background
+            output = subprocess.check_output(args='tasklist /FI "IMAGENAME eq FlightSimulator.exe"', shell=True, text=True)
+            _msfs_is_running = "FlightSimulator.exe" in output
+            # print(f"MSFS is running = {_msfs_is_running}")
+
         except Exception:
             pass
-
-        # Check every few seconds to minimize CPU overhead
-        time.sleep(5.0)
+        time.sleep(5)  # Check every 5 seconds without blocking main 60 FPS loop
 
 
 def main() -> None:
@@ -57,10 +56,6 @@ def main() -> None:
 
     main_th = threading.current_thread()
     print(f"[MAIN THREAD] Running in: {main_th.name} (ID: {main_th.ident})")
-
-    # Start the background monitoring thread so it never blocks the 60 FPS main loop
-    monitor_thread = threading.Thread(target=monitor_msfs_process, daemon=True)
-    monitor_thread.start()
 
     pygame.init()
     pygame.joystick.init()
@@ -87,34 +82,47 @@ def main() -> None:
 
     mappings_file = os.path.join(base_path, "mappings.xml")
 
+    sim_lock = threading.Lock()
     # Load OOP configurations from XML using the robust absolute path
-    controls = load_configurations(xml_path=mappings_file, joysticks_dict=joysticks, aircraft_requests=aq)
+    controls = load_configurations(xml_path=mappings_file, joysticks_dict=joysticks, aircraft_requests=aq, sim_lock=sim_lock)
 
     clock = pygame.time.Clock()
     print("Starting OOP hardware bridge main loop...")
 
-    running = True
-    while running:
-        dt = clock.tick(60) / 1000.0  # Delta time in seconds (target 60 FPS)
+    # Start the background monitoring thread so it never blocks the 60 FPS main loop
+    monitor_thread = threading.Thread(target=monitor_msfs_process, daemon=True)
+    monitor_thread.start()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+    # Create a shared lock for thread-safe SimConnect operations
+    # Create and start a dedicated thread for each control object
+    control_threads = []
+    for ctrl_id, control_obj in controls.items():
+        t = threading.Thread(
+            target=control_obj.update_threaded,
+            args=(POLLING_FREQUENCY,),
+            daemon=True,
+            name=f"ControlThread-{ctrl_id}"
+        )
+        control_threads.append(t)
+        t.start()
 
-        # If background monitor detected MSFS closure, break loop
-        if not _msfs_is_running:
-            print("MSFS closed. Shutting down bridge...")
-            break
+    while _msfs_is_running:
+        # Refresh Pygame events and joystick states safely on the main thread
+        pygame.event.pump()
+        clock.tick(POLLING_FREQUENCY) / 1000.0  # Calculate delta time in seconds
 
-        try:
-            # Update all loaded controls efficiently each frame without lag
-            for ctrl_id, control_obj in controls.items():
-                control_obj.update(aq, dt, joysticks)
-        except Exception as e:
-            print(f"SimConnect connection lost: {e}")
-            traceback.print_exc()
-            break
+    # If background monitor detected MSFS closure, break loop
+    print("MSFS closed. Terminating control threads and exiting...")
 
+    # Signal all control threads to stop
+    for ctrl_id, control_obj in controls.items():
+        control_obj.running = False
+
+    # Wait for all threads to finish gracefully
+    for t in control_threads:
+        t.join(timeout=1.0)
+
+    print('Bye!!!!!!!!!!!!!!!!!!!!')
     pygame.quit()
 
 

@@ -1,5 +1,6 @@
 import time
 import pygame
+import traceback
 from typing import Dict, Optional, Any
 from actions import Action
 import xml.etree.ElementTree as ET
@@ -7,13 +8,13 @@ from typing import List, Dict, Any, Optional
 
 class BaseControl:
     @staticmethod
-    def create(ctrl_elem: Any, joysticks: Dict, aircraft_requests) -> "BaseControl":
+    def create(ctrl_elem: Any, joysticks: Dict, aircraft_requests, sim_lock) -> "BaseControl":
         ctrl_type = ctrl_elem.get("type", "analog")
 
         if ctrl_type == "analog":
-            return AnalogControl(ctrl_elem, joysticks, aircraft_requests)
+            return AnalogControl(ctrl_elem, joysticks, aircraft_requests, sim_lock)
         elif ctrl_type == "discrete":
-            return DiscreteControl(ctrl_elem, joysticks, aircraft_requests)
+            return DiscreteControl(ctrl_elem, joysticks, aircraft_requests, sim_lock)
         else:
             raise ValueError(f"Unknown control type: {ctrl_type}")
 
@@ -21,7 +22,8 @@ class BaseControl:
             self,
             ctrl_elem: ET.Element,
             joysticks_dict: Dict[str, Any],
-            aircraft_requests: Any
+            aircraft_requests: Any,
+            sim_lock: Any
     ) -> None:
 
         self.id: str = ctrl_elem.get("id")
@@ -40,12 +42,16 @@ class BaseControl:
         self.actions: Dict[str, Action] = actions
 
         self.init_value: float = float(ctrl_elem.find("init_value").text) if ctrl_elem.find("init_value") is not None else 0
+        self.joysticks_dict = joysticks_dict
         self.aircraft_requests = aircraft_requests
 
         temp_current_val = self.aircraft_requests.get(self.sim_variables[0]) if self.sim_variables else None
         self.current_value = temp_current_val if temp_current_val is not None else self.init_value
 
         self.last_active_action = None
+
+        self.sim_lock = sim_lock
+        self.running = False
 
     def _find_active_action(self):
         active_action_obj: Optional[Action] = None
@@ -59,42 +65,40 @@ class BaseControl:
 
         return active_action_obj, was_active_action
 
-    def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
+    def update(self, dt: float) -> None:
         raise NotImplementedError("Implement in subclasses")
 
-    # def update_threaded(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]):
-    #     clock = pygame.time.Clock()
-    #     print(f"Starting control {self.id}...")
-    #
-    #     running = True
-    #     while running:
-    #         dt = clock.tick(60) / 1000.0  # Delta time in seconds (target 60 FPS)
-    #
-    #         for event in pygame.event.get():
-    #             if event.type == pygame.QUIT:
-    #                 running = False
-    #
-    #         # If background monitor detected MSFS closure, break loop
-    #         if not _msfs_is_running:
-    #             print("MSFS closed. Shutting down bridge...")
-    #             break
-    #
-    #         try:
-    #             self.update(aq, dt, joysticks)
-    #         except Exception as e:
-    #             print(f"SimConnect connection lost: {e}")
-    #             traceback.print_exc()
-    #             break
+    def update_threaded(self, polling_frequency) -> None:
+        """Dedicated background thread loop running at 60 FPS for this specific control."""
+        clock = pygame.time.Clock()
+        import os
+        import threading
+
+        print(f"Starting dedicated thread for control: {self.id} [PID: {os.getpid()}, TID: {threading.get_native_id()}]")
+
+        self.running = True
+        while self.running:
+            dt = clock.tick(polling_frequency) / 1000.0  # Calculate delta time in seconds
+
+            try:
+                # Execute control update using thread-safe operations
+                self.update(dt)
+            except Exception as e:
+                print(f"Error in control thread {self.id}: {e}")
+                break
+
+        print(f"Thread for control {self.id} terminated cleanly.")
 
 class AnalogControl(BaseControl):
     def __init__(
             self,
             ctrl_elem: ET.Element,
             joysticks_dict: Dict[str, Any],
-            aircraft_requests: Any
+            aircraft_requests: Any,
+            sim_lock: Any
     ) -> None:
 
-        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests)
+        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests, sim_lock)
         self.step_fine: float = float(ctrl_elem.find("step_fine").text) if ctrl_elem.find("step_fine") is not None else 0
         self.step_medium: float = float(ctrl_elem.find("step_medium").text) if ctrl_elem.find("step_medium") is not None else self.step_fine
         self.step_fast: float = float(ctrl_elem.find("step_fast").text) if ctrl_elem.find("step_fast") is not None else self.step_medium
@@ -133,7 +137,7 @@ class AnalogControl(BaseControl):
         self.press_timers: Dict[str, float] = {action_id: 0.0 for action_id in self.actions}
 
 
-    def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
+    def update(self, dt: float) -> None:
         active_action_obj, was_active_action = self._find_active_action()
 
         if active_action_obj and (self.repeat or not was_active_action):
@@ -141,7 +145,7 @@ class AnalogControl(BaseControl):
             trigger_info = active_action_obj.get_active_trigger_description()
             live_value = None
             if not active_action_obj.ignore_live_value:
-                live_value = aircraft.get(self.sim_variables[0])
+                live_value = self.aircraft_requests.get(self.sim_variables[0])
                 self.current_value = live_value
                 # print(f"LIVE VALUE ============= {live_value}")
 
@@ -162,7 +166,7 @@ class AnalogControl(BaseControl):
                         elif duration > self.time_threshold_1:
                             step = self.step_medium
 
-                        multiplier = self._check_speed_multiplier(joysticks_dict)
+                        multiplier = self._check_speed_multiplier(self.joysticks_dict)
                         step *= multiplier
 
                     step *= active_action_obj.direction
@@ -174,7 +178,7 @@ class AnalogControl(BaseControl):
                 try:
                     if active_action_obj.ignore_live_value or self.current_value != live_value:
                         # print(f"Elaped =========== {time.time() - self.t1}")
-                        aircraft.set(sim_variable, self.current_value)
+                        self.aircraft_requests.set(sim_variable, self.current_value)
                         self.t1 = time.time()
                 except Exception as e:
                     print(f"Error writing {sim_variable}: {e}")
@@ -184,7 +188,7 @@ class AnalogControl(BaseControl):
                     self.current_value = self.last_active_action.forced_value_on_release
                     for sim_variable in self.sim_variables:
                         try:
-                            aircraft.set(sim_variable, self.last_active_action.forced_value_on_release)
+                            self.aircraft_requests.set(sim_variable, self.last_active_action.forced_value_on_release)
                         except Exception as e:
                             print(f"Error writing {sim_variable}: {e}")
 
@@ -224,21 +228,22 @@ class DiscreteControl(BaseControl):
             self,
             ctrl_elem: ET.Element,
             joysticks_dict: Dict[str, Any],
-            aircraft_requests
+            aircraft_requests,
+            sim_lock: Any
     ) -> None:
 
-        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests)
+        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests, sim_lock)
 
-    def update(self, aircraft: Any, dt: float, joysticks_dict: Dict[str, Any]) -> None:
+    def update(self, dt: float) -> None:
         # try:
         active_action_obj, was_active_action = self._find_active_action()
 
         if active_action_obj and (self.repeat or not was_active_action):
             for sim_variable in self.sim_variables:
                 if active_action_obj.ctrl_value:
-                    aircraft.set(sim_variable, active_action_obj.ctrl_value)
+                    self.aircraft_requests.set(sim_variable, active_action_obj.ctrl_value)
 
-            triggered = active_action_obj.execute(aircraft)
+            triggered = active_action_obj.execute(self.aircraft_requests)
 
             if triggered:
                 trigger_info = active_action_obj.get_active_trigger_description()
