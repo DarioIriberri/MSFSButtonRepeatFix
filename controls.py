@@ -1,6 +1,7 @@
 import time
 import pygame
 import traceback
+import logging
 from typing import Dict, Optional, Any
 from actions import Action
 import xml.etree.ElementTree as ET
@@ -74,7 +75,7 @@ class BaseControl:
         import os
         import threading
 
-        print(f"Starting dedicated thread for control: {self.id} [PID: {os.getpid()}, TID: {threading.get_native_id()}]")
+        logging.info(f"Starting dedicated thread for control: {self.id} [PID: {os.getpid()}, TID: {threading.get_native_id()}]")
 
         self.running = True
         while self.running:
@@ -84,11 +85,11 @@ class BaseControl:
                 # Execute control update using thread-safe operations
                 self.update(dt)
             except Exception as e:
-                print(f"Error in control thread {self.id}: {e}")
+                logging.error(f"Error in control thread {self.id}: {e}")
                 traceback.print_exc()
                 break
 
-        print(f"Thread for control {self.id} terminated cleanly.")
+        logging.info(f"Thread for control {self.id} terminated cleanly.")
 
 class AnalogControl(BaseControl):
     def __init__(
@@ -143,12 +144,12 @@ class AnalogControl(BaseControl):
 
         if active_action_obj and (self.repeat or not was_active_action):
             self.last_active_action = active_action_obj
-            trigger_info = active_action_obj.get_active_trigger_description()
+            # trigger_info = active_action_obj.get_active_trigger_description()
             live_value = None
             if not active_action_obj.ignore_live_value:
                 live_value = self.aircraft_requests.get(self.sim_variables[0])
                 self.current_value = live_value
-                # print(f"LIVE VALUE ============= {live_value}")
+                # logging.debug(f"LIVE VALUE ============= {live_value}")
 
             if self.current_value is not None:
             # Sync self.current_value with the sim's
@@ -157,7 +158,7 @@ class AnalogControl(BaseControl):
 
                 for sim_variable in self.sim_variables:
                     if active_action_obj.forced_value_on_press is not None:
-                        print(f"FORCING VALUE!!!!!!!!!!!!! {sim_variable} [{trigger_info}] --- {self.current_value}")
+                        logging.info(f"FORCING VALUE!!!!!!!!!!!!! {sim_variable} --- {self.current_value}")
                         self.current_value = active_action_obj.forced_value_on_press
                     else:
                         step = self.step_fine
@@ -176,14 +177,14 @@ class AnalogControl(BaseControl):
                         self.current_value += step
                         self.current_value = max(self.current_value, self.min_value)
                         self.current_value = min(self.current_value, self.max_value)
-                        print(f"{sim_variable} [{trigger_info}] --- step = {step} --- current.value = {self.current_value}")
+                        logging.info(f"{sim_variable} --- step = {step} --- current.value = {self.current_value}")
                     try:
                         if active_action_obj.ignore_live_value or self.current_value != live_value:
-                            # print(f"Elaped =========== {time.time() - self.t1}")
+                            # logging.debug(f"Elaped =========== {time.time() - self.t1}")
                             self.aircraft_requests.set(sim_variable, self.current_value)
                             self.t1 = time.time()
                     except Exception as e:
-                        print(f"Error writing {sim_variable}: {e}")
+                        logging.error(f"Error writing {sim_variable}: {e}")
         else:
             if self.last_active_action is not None:
                 if self.last_active_action.forced_value_on_release is not None:
@@ -192,7 +193,7 @@ class AnalogControl(BaseControl):
                         try:
                             self.aircraft_requests.set(sim_variable, self.last_active_action.forced_value_on_release)
                         except Exception as e:
-                            print(f"Error writing {sim_variable}: {e}")
+                            logging.error(f"Error writing {sim_variable}: {e}")
 
                 for act_id in self.press_timers:
                     self.press_timers[act_id] = 0.0
@@ -237,19 +238,19 @@ class DiscreteControl(BaseControl):
         super().__init__(ctrl_elem, joysticks_dict, aircraft_requests, sim_lock)
 
     def update(self, dt: float) -> None:
-        # try:
-        active_action_obj, was_active_action = self._find_active_action()
+        try:
+            active_action_obj, was_active_action = self._find_active_action()
 
-        if active_action_obj and (self.repeat or not was_active_action):
-            for sim_variable in self.sim_variables:
-                if active_action_obj.ctrl_value:
-                    self.aircraft_requests.set(sim_variable, active_action_obj.ctrl_value)
+            if active_action_obj and (self.repeat or not was_active_action):
+                for sim_variable in self.sim_variables:
+                    if active_action_obj.ctrl_value:
+                        self.aircraft_requests.set(sim_variable, active_action_obj.ctrl_value)
 
-            triggered = active_action_obj.execute(self.aircraft_requests)
+                triggered = active_action_obj.execute(self.aircraft_requests)
+                #
+                # if triggered:
+                #     trigger_info = active_action_obj.get_active_trigger_description()
+                #     logging.debug(f"{active_action_obj.action_id} [{trigger_info}] --- {self.current_value}")
 
-            if triggered:
-                trigger_info = active_action_obj.get_active_trigger_description()
-                print(f"{active_action_obj.action_id} [{trigger_info}] --- {self.current_value}")
-
-        # except Exception as e:
-        #     print(f"Error writing {self.sim_variable}: {e}")
+        except Exception as e:
+            logging.error(f"Error writing {self.sim_variables}: {e}")

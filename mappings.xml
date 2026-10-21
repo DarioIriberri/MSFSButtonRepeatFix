@@ -205,15 +205,15 @@
         <step_fine>0.01</step_fine>
     </control-->
 
-	<control id="center_view_and_freelook_reset" type="discrete">
+	<control id="center_view_and_freelook_reset_key" type="discrete">
 		<action id ="center_view_and_freelook_reset">
-			<joystick_mapping>
+			<!--joystick_mapping>
 				<joystick_name>T.Flight Stick X</joystick_name>
 				<joystick_guid></joystick_guid>
 				<button_mapping>
 					<button>1</button>
 				</button_mapping>
-			</joystick_mapping>
+			</joystick_mapping-->
 			<key_mapping>
 				<key>space</key>
 				<shift>false</shift> 
@@ -239,6 +239,7 @@
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>true</alt>
+				<repeats>2</repeats>
 			</execution>
 			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
 				<key>f</key>
@@ -256,6 +257,7 @@
 				<shift>true</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
+				<repeats>2</repeats>
 			</execution>
 			<!--execution type="sim_var">
 				<sim_var_name>CAMERA_ACTION_COCKPIT_VIEW_RESET</sim_var_name>
@@ -263,6 +265,40 @@
 				<delay_ms_after_pressed>2000</delay_ms_after_pressed>
 				<conditions/>
 			</execution-->
+		</action>
+		<repeat>false</repeat>
+	</control>
+	
+	<control id="center_view_and_freelook_reset_button" type="discrete">
+		<action id ="center_view_and_freelook_reset">
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>1</button>
+				</button_mapping>
+			</joystick_mapping>
+			<!--key_mapping>
+				<key>space</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping-->			
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - LOAD CUSTOM CAMERA 0 -->
+				<key>`</key> <!-- This is º in spanish keyboards -->
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+				<repeats>1</repeats>
+				<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
+			</execution>
+			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - RESET COCKPIT VIEW -->
+				<key>space</key>
+				<shift>true</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+				<repeats>2</repeats>
+			</execution>
 		</action>
 		<repeat>false</repeat>
 	</control>

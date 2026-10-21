@@ -4,6 +4,7 @@ import traceback
 import subprocess
 import threading
 import time, datetime
+import logging
 from time import sleep
 
 import pygame
@@ -31,19 +32,27 @@ def load_configurations(xml_path: str, joysticks_dict: Dict[str, Any], aircraft_
     return controls
 
 
+def setup_logging(debug_mode: bool = False) -> None:
+    level = logging.DEBUG if debug_mode else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] [%(threadName)s] %(message)s",
+        datefmt="%H:%M:%S"
+    )
+
 def monitor_msfs_process() -> None:
     """Background thread function to check if MSFS is running without blocking the main loop."""
     global _msfs_is_running
 
     current_th = threading.current_thread()
-    print(f"[BACKGROUND THREAD] Running in: {current_th.name} (ID: {current_th.ident})")
+    logging.info(f"[BACKGROUND THREAD] Running in: {current_th.name} (ID: {current_th.ident})")
 
     while _msfs_is_running:
         try:
             # Query Windows tasklist for the MSFS process safely in the background
             output = subprocess.check_output(args='tasklist /FI "IMAGENAME eq FlightSimulator.exe"', shell=True, text=True)
             _msfs_is_running = "FlightSimulator.exe" in output
-            # print(f"MSFS is running = {_msfs_is_running}")
+            # logging.debug(f"MSFS is running = {_msfs_is_running}")
 
         except Exception:
             pass
@@ -55,7 +64,7 @@ def main() -> None:
     global _msfs_is_running
 
     main_th = threading.current_thread()
-    print(f"[MAIN THREAD] Running in: {main_th.name} (ID: {main_th.ident})")
+    logging.info(f"[MAIN THREAD] Running in: {main_th.name} (ID: {main_th.ident})")
 
     pygame.init()
     pygame.joystick.init()
@@ -68,7 +77,7 @@ def main() -> None:
 
     for guid, js in joysticks.items():
         js.init()
-        print(f"Joystick detected: {js.get_name()} [GUID: {guid}]")
+        logging.info(f"Joystick detected: {js.get_name()} [GUID: {guid}]")
 
     # Initialize SimConnect bridge
     sm = SimConnect()
@@ -87,7 +96,7 @@ def main() -> None:
     controls = load_configurations(xml_path=mappings_file, joysticks_dict=joysticks, aircraft_requests=aq, sim_lock=sim_lock)
 
     clock = pygame.time.Clock()
-    print("Starting OOP hardware bridge main loop...")
+    logging.info("Starting OOP hardware bridge main loop...")
 
     # Start the background monitoring thread so it never blocks the 60 FPS main loop
     monitor_thread = threading.Thread(target=monitor_msfs_process, daemon=True)
@@ -112,7 +121,7 @@ def main() -> None:
         clock.tick(POLLING_FREQUENCY) / 1000.0  # Calculate delta time in seconds
 
     # If background monitor detected MSFS closure, break loop
-    print("MSFS closed. Terminating control threads and exiting...")
+    logging.info("MSFS closed. Terminating control threads and exiting...")
 
     # Signal all control threads to stop
     for ctrl_id, control_obj in controls.items():
@@ -122,11 +131,12 @@ def main() -> None:
     for t in control_threads:
         t.join(timeout=1.0)
 
-    print('Bye!!!!!!!!!!!!!!!!!!!!')
+    logging.info('Bye!!!!!!!!!!!!!!!!!!!!')
     pygame.quit()
 
 
 if __name__ == "__main__":
+    setup_logging(debug_mode=False)
     # Determine base directory to save log.txt in the executable's folder
     if getattr(sys, 'frozen', False):
         app_dir = os.path.dirname(sys.executable)
