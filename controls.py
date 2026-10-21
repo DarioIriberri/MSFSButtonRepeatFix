@@ -85,6 +85,7 @@ class BaseControl:
                 self.update(dt)
             except Exception as e:
                 print(f"Error in control thread {self.id}: {e}")
+                traceback.print_exc()
                 break
 
         print(f"Thread for control {self.id} terminated cleanly.")
@@ -149,39 +150,40 @@ class AnalogControl(BaseControl):
                 self.current_value = live_value
                 # print(f"LIVE VALUE ============= {live_value}")
 
+            if self.current_value is not None:
             # Sync self.current_value with the sim's
-            self.press_timers[active_action_obj.action_id] += dt
-            duration = self.press_timers[active_action_obj.action_id]
+                self.press_timers[active_action_obj.action_id] += dt
+                duration = self.press_timers[active_action_obj.action_id]
 
-            for sim_variable in self.sim_variables:
-                if active_action_obj.forced_value_on_press is not None:
-                    print(f"FORCING VALUE!!!!!!!!!!!!! {sim_variable} [{trigger_info}] --- {self.current_value}")
-                    self.current_value = active_action_obj.forced_value_on_press
-                else:
-                    step = self.step_fine
+                for sim_variable in self.sim_variables:
+                    if active_action_obj.forced_value_on_press is not None:
+                        print(f"FORCING VALUE!!!!!!!!!!!!! {sim_variable} [{trigger_info}] --- {self.current_value}")
+                        self.current_value = active_action_obj.forced_value_on_press
+                    else:
+                        step = self.step_fine
 
-                    if self.repeat:
-                        if duration > self.time_threshold_2:
-                            step = self.step_fast
-                        elif duration > self.time_threshold_1:
-                            step = self.step_medium
+                        if self.repeat:
+                            if duration > self.time_threshold_2:
+                                step = self.step_fast
+                            elif duration > self.time_threshold_1:
+                                step = self.step_medium
 
-                        multiplier = self._check_speed_multiplier(self.joysticks_dict)
-                        step *= multiplier
+                            multiplier = self._check_speed_multiplier(self.joysticks_dict)
+                            step *= multiplier
 
-                    step *= active_action_obj.direction
+                        step *= active_action_obj.direction
 
-                    self.current_value += step
-                    self.current_value = max(self.current_value, self.min_value)
-                    self.current_value = min(self.current_value, self.max_value)
-                    print(f"{sim_variable} [{trigger_info}] --- step = {step} --- current.value = {self.current_value}")
-                try:
-                    if active_action_obj.ignore_live_value or self.current_value != live_value:
-                        # print(f"Elaped =========== {time.time() - self.t1}")
-                        self.aircraft_requests.set(sim_variable, self.current_value)
-                        self.t1 = time.time()
-                except Exception as e:
-                    print(f"Error writing {sim_variable}: {e}")
+                        self.current_value += step
+                        self.current_value = max(self.current_value, self.min_value)
+                        self.current_value = min(self.current_value, self.max_value)
+                        print(f"{sim_variable} [{trigger_info}] --- step = {step} --- current.value = {self.current_value}")
+                    try:
+                        if active_action_obj.ignore_live_value or self.current_value != live_value:
+                            # print(f"Elaped =========== {time.time() - self.t1}")
+                            self.aircraft_requests.set(sim_variable, self.current_value)
+                            self.t1 = time.time()
+                    except Exception as e:
+                        print(f"Error writing {sim_variable}: {e}")
         else:
             if self.last_active_action is not None:
                 if self.last_active_action.forced_value_on_release is not None:
