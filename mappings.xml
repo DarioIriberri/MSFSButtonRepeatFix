@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
 	<control id="elevator_trim" type="analog">	
-		<sim_variable>ELEVATOR_TRIM_POSITION</sim_variable>
+		<execution type="sim_var">
+			<name>ELEVATOR_TRIM_POSITION</name>
+		</execution>
 		<action id="elevator_trim_up">
 			<direction>1</direction>
 			<joystick_mapping>
@@ -23,7 +25,6 @@
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			
 		</action>
 		<action id="elevator_trim_down">
 			<direction>-1</direction>
@@ -68,7 +69,9 @@
     </control>
 	
 	<control id="rudder_trim" type="analog">	
-		<sim_variable>RUDDER_TRIM_PCT</sim_variable>
+		<execution type="sim_var">
+			<name>RUDDER_TRIM_PCT</name>
+		</execution>
 		<action id="rudder_trim_left">
 			<direction>-1</direction>
 			<joystick_mapping>
@@ -79,7 +82,6 @@
 					<button>0</button>
 				</button_mapping>
 			</joystick_mapping>
-			
 		</action>
 		<action id="rudder_trim_right">
 			<direction>1</direction>
@@ -104,7 +106,9 @@
     </control>
 	
 	<control id="cockpit_zoom" type="analog">	
-		<sim_variable>COCKPIT_CAMERA_ZOOM</sim_variable>
+		<execution type="sim_var">
+			<name>COCKPIT_CAMERA_ZOOM</name>
+		</execution>
 		<action id="cockpit_zoom_in">
 			<direction>1</direction>
 			<joystick_mapping>
@@ -176,72 +180,29 @@
 		</action>
 		<repeat>true</repeat>
     </control>
-	
-	<!--control id="brakes" type="analog">	
-		<sim_variable>BRAKE_LEFT_POSITION</sim_variable>
-		<sim_variable>BRAKE_RIGHT_POSITION</sim_variable>
-		<action id="increase_brake">
-			<direction>1</direction>
-			<ignore_live_value>true</ignore_live_value>
-			<forced_value_on_release>0</forced_value_on_release>
-			<joystick_mapping>
-				<joystick_name>T.Flight Stick X</joystick_name>
-				<joystick_guid></joystick_guid>
-				<button_mapping>
-					<button>2</button>
-				</button_mapping>
-			</joystick_mapping>
-			<key_mapping>
-				<key>num_0</key>
-				<shift>false</shift> 
-				<ctrl>false</ctrl>
-				<alt>false</alt>
-			</key_mapping>
-		</action>
-		<repeat>true</repeat>
-		<init_value>0</init_value>
-		<min_value>0</min_value>
-		<max_value>0.5</max_value>
-        <step_fine>0.01</step_fine>
-    </control-->
 
 	<control id="center_view_and_freelook_reset_key" type="discrete">
 		<action id="center_view_and_freelook_reset">
-			<!--joystick_mapping>
-				<joystick_name>T.Flight Stick X</joystick_name>
-				<joystick_guid></joystick_guid>
-				<button_mapping>
-					<button>1</button>
-				</button_mapping>
-			</joystick_mapping-->
 			<key_mapping>
 				<key>space</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<!--ctrl_value>2.0</ctrl_value-->
-			<!--execution type="sim_var">
-				<sim_var_name>COCKPIT_CAMERA_HEADLOOK</sim_var_name>
-				<repeats>1</repeats>
-				<value>2.0</value>
-			</execution-->				
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - LOAD CUSTOM CAMERA 0 -->
-				<key>`</key> <!-- This is º in spanish keyboards -->
+			<execution type="key_press"> 
+				<key>`</key> 
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
-				<!--repeats>1</repeats-->
-				<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
 			</execution>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
+			<execution type="key_press"> 
 				<key>f</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>true</alt>
 				<repeats>2</repeats>
 			</execution>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TOGGLE COCKPIT FREELOOK -->
+			<execution type="key_press"> 
 				<key>f</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
@@ -252,19 +213,13 @@
 					</condition>
 				</conditions>
 			</execution>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - RESET COCKPIT VIEW -->
+			<execution type="key_press"> 
 				<key>space</key>
 				<shift>true</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 				<repeats>2</repeats>
 			</execution>
-			<!--execution type="sim_var">
-				<sim_var_name>CAMERA_ACTION_COCKPIT_VIEW_RESET</sim_var_name>
-				<repeats>1</repeats>
-				<delay_ms_after_pressed>2000</delay_ms_after_pressed>
-				<conditions/>
-			</execution-->
 		</action>
 		<repeat>false</repeat>
 	</control>
@@ -278,21 +233,14 @@
 					<button>1</button>
 				</button_mapping>
 			</joystick_mapping>
-			<!--key_mapping>
-				<key>space</key>
-				<shift>false</shift> 
-				<ctrl>false</ctrl>
-				<alt>false</alt>
-			</key_mapping-->			
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - LOAD CUSTOM CAMERA 0 -->
-				<key>`</key> <!-- This is º in spanish keyboards -->
+			<execution type="key_press"> 
+				<key>`</key> 
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 				<repeats>1</repeats>
-				<!--delay_ms_after_pressed>10</delay_ms_after_pressed-->
 			</execution>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - RESET COCKPIT VIEW -->
+			<execution type="key_press"> 
 				<key>space</key>
 				<shift>true</shift> 
 				<ctrl>false</ctrl>
@@ -311,7 +259,7 @@
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TRANSLATE COCKPIT VIEW LEFT -->
+			<execution type="key_press"> 
 				<key>left</key>
 				<shift>true</shift> 
 				<ctrl>false</ctrl>
@@ -329,7 +277,7 @@
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TRANSLATE COCKPIT VIEW RIGHT -->
+			<execution type="key_press"> 
 				<key>right</key>
 				<shift>true</shift> 
 				<ctrl>false</ctrl>
@@ -347,7 +295,7 @@
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - INCREASE COCKPIT VIEW HEIGHT-->
+			<execution type="key_press"> 
 				<key>up</key>
 				<shift>true</shift> 
 				<ctrl>false</ctrl>
@@ -365,7 +313,7 @@
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - DECREASE COCKPIT VIEW HEIGHT -->
+			<execution type="key_press"> 
 				<key>down</key>
 				<shift>true</shift> 
 				<ctrl>false</ctrl>
@@ -383,7 +331,7 @@
 				<ctrl>true</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TRANSLATE COCKPIT VIEW FORWARD -->
+			<execution type="key_press"> 
 				<key>up</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
@@ -401,7 +349,7 @@
 				<ctrl>true</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<execution type="key_press"> <!-- Match to assignment Keyboard - Camera - Cockpit Camera - TRANSLATE COCKPIT VIEW BACKWARD -->
+			<execution type="key_press"> 
 				<key>down</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
@@ -415,6 +363,7 @@
 		<aircraft name="FBW A320 Neo">
 			<aircraft_id>Airbus A320neo Spantax 60s</aircraft_id>
 			<aircraft_id>Airbus A320neo Iberia</aircraft_id>
+			<aircraft_id>Airbus A320neo FlyByWire</aircraft_id>
 		</aircraft>
 		<aircraft name="PMDG 738">
 			<aircraft_id>PMDG 737 Spantax</aircraft_id>

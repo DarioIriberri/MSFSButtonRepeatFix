@@ -1,32 +1,31 @@
 <config>
-	<control id="brakes" type="discrete">	
-		<action id="increase_brake">
-			<joystick_mapping>
-				<joystick_name>T.Flight Stick X</joystick_name>
-				<joystick_guid></joystick_guid>
-				<button_mapping>
-					<button>2</button>
-				</button_mapping>
-			</joystick_mapping>
+	<control id="brakes" type="analog">	
+		<execution type="sim_event">
+			<name>AXIS_LEFT_BRAKE_SET</name>
+			<name>AXIS_RIGHT_BRAKE_SET</name>
+		</execution>
+		<action id="brake_increase">
+			<direction>1</direction>
 			<key_mapping>
 				<key>num_0</key>
 				<shift>false</shift> 
 				<ctrl>false</ctrl>
 				<alt>false</alt>
 			</key_mapping>
-			<execution type="sim_var">
-				<sim_var_name>BRAKE_LEFT_POSITION</sim_var_name>
-				<repeats>1</repeats>
-				<value>1</value>
-				<delay_ms_after_pressed>10</delay_ms_after_pressed>
-			</execution>
-			<execution type="sim_var">
-				<sim_var_name>BRAKE_RIGHT_POSITION</sim_var_name>
-				<repeats>1</repeats>
-				<value>1</value>
-				<delay_ms_after_pressed>10</delay_ms_after_pressed>
-			</execution>			
+			<forced_value_on_release>-16383</forced_value_on_release>
 		</action>
 		<repeat>true</repeat>
+		<init_value>-16383</init_value>
+		<min_value>-16383</min_value>
+		<max_value>16384</max_value>
+        <step_fine>100</step_fine>
+        <step_medium>200</step_medium>
+        <step_fast>400</step_fast>
+        <time_threshold_1>0.2</time_threshold_1>
+        <time_threshold_2>1.0</time_threshold_2>
+		<speed_multiplier>
+			<key_multiplier>shift</key_multiplier>
+			<multiplier_factor>2</multiplier_factor>
+		</speed_multiplier>
 	</control>
 </config>

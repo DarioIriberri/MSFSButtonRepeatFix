@@ -37,24 +37,33 @@ def monitor_camera_state():
 
     # aq.set(sim_var, 1.0)
 
-    # brake_left = ae.find("AXIS_LEFT_BRAKE_SET")
-    # brake_right = ae.find("AXIS_RIGHT_BRAKE_SET")
+    sm = SimConnect()
+    aq = AircraftRequests(sm, _time=100)
+    ae = AircraftEvents(sm)
+
+    brake_left = ae.find("AXIS_LEFT_BRAKE_SET")
+    brake_left(-16383)
+    time.sleep(1)
+
+    print("Left pedal:", aq.get("A32NX_LEFT_BRAKE_PEDAL_INPUT"))
+
+    brake_left(16383)
+    time.sleep(1)
+
+    print("Left pedal:", aq.get("A32NX_LEFT_BRAKE_PEDAL_INPUT"))
+
+    # while time.time() - start_time < duration:
+    #     # Obtener el valor de la variable CAMERA STATE del simulador
+    #     state = aq.get(sim_var)
+    #     # state = aq.set(sim_var, 0.1)
+    #     state2 = ""
+    #     timestamp = time.strftime("%H:%M:%S")
     #
-    # brake_left(16383)
-    # brake_right(16383)
-
-    while time.time() - start_time < duration:
-        # Obtener el valor de la variable CAMERA STATE del simulador
-        state = aq.get(sim_var)
-        # state = aq.set(sim_var, 0.1)
-        state2 = ""
-        timestamp = time.strftime("%H:%M:%S")
-
-        print(f"[{timestamp}] {sim_var} -> {state}")
-        # print(f"[{timestamp}] {sim_var2} -> {state2}")
-        # print(f"[{timestamp}] {sim_var2} -> {state2}")
-
-        time.sleep(interval)
+    #     print(f"[{timestamp}] {sim_var} -> {state}")
+    #     # print(f"[{timestamp}] {sim_var2} -> {state2}")
+    #     # print(f"[{timestamp}] {sim_var2} -> {state2}")
+    #
+    #     time.sleep(interval)
 
     print("\nDone................")
 

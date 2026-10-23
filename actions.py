@@ -133,9 +133,14 @@ class Action:
                     "alt": a_elem.text.strip().lower() == "true" if a_elem is not None and a_elem.text else False,
                 })
 
-            elif exec_type == "sim_var":
-                name_elem = exec_elem.find("sim_var_name")
-                val_elem = exec_elem.find("value")  # Optional in case you want to pass a direct value
+            else:
+                if exec_type == "sim_var":
+                    name_elem = exec_elem.find("sim_var_name")
+                    val_elem = exec_elem.find("value")  # Optional in case you want to pass a direct value
+
+                elif exec_type == "sim_event":
+                    name_elem = exec_elem.find("event_name")
+                    val_elem = exec_elem.find("value")  # Optional in case you want to pass a direct value
 
                 step_data.update({
                     "name": name_elem.text.strip() if name_elem is not None and name_elem.text else None,
@@ -152,54 +157,20 @@ class Action:
     def was_active(self) -> bool:
         return self._was_active
 
-    # def get_active_trigger_description(self) -> str:
-    #     for inp in self.inputs:
-    #         if inp.is_active():
-    #             # If it is a keyboard key
-    #             if isinstance(inp, KeyInput):
-    #                 return f"Key: {inp.key_code}"
-    #             # If it is a joystick (you can adapt it according to JoystickInput attributes)
-    #             elif isinstance(inp, JoystickInput):
-    #                 return f"Joystick (Button/Hat)"
-    #     return "Unknown"
-
-    def _is_msfs_active(self) -> bool:
-        """Retrieves the title of the active window using the Windows API via ctypes."""
-        try:
-            hwnd = ctypes.windll.user32.GetForegroundWindow()
-            if not hwnd:
-                return False
-
-            pid = ctypes.c_ulong()
-            ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-
-            process = psutil.Process(pid.value)
-            return process.name().lower() == "flightsimulator.exe"
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            return False
-        except Exception:
-            return False
-
-    def execute(self, aircraft: Any) -> bool:
+    def execute(self, aircraft_requests: Any, aircraft_events: Any) -> None:
         """Iterate and execute all sequential steps defined in the XML."""
         if not hasattr(self, "execution_steps") or not self.execution_steps:
             logging.debug(f"[Action {self.action_id}] No execution steps defined.")
             return False
 
-        logging.debug(f"\n[Action {self.action_id}] Starting sequence of {len(self.execution_steps)} step(s)...")
-
-        triggered = False
-
-        if not self._is_msfs_active():
-            logging.debug(f"     [X] MSFS Window not active!!!!!!!!!!!!!!!!!!!!! Skipping...")
-            return False
+        logging.info(f"[Action {self.action_id}] Starting sequence of {len(self.execution_steps)} step(s)...")
 
         for idx, step in enumerate(self.execution_steps):
             step_type = step["type"]
             logging.debug(f"  -> [Step {idx + 1}] Type: '{step_type}'")
 
             # 1. Validate the specific conditions of this step before executing it
-            if not self._check_conditions(step["conditions"], aircraft):
+            if not self._check_conditions(step["conditions"], aircraft_requests):
                 logging.debug(f"     [X] Condition NOT met for step {idx + 1} ({step_type}). Skipping...")
                 continue
 
@@ -236,32 +207,34 @@ class Action:
                 if ctrl: pydirectinput.keyUp('ctrl')
                 if alt: pydirectinput.keyUp('alt')
 
-                triggered = True
-
-            elif step_type == "sim_var":
-                sim_name = step["name"]
-                sim_val = step["value"]
-                if not sim_name:
-                    logging.debug(f"     [!] 'sim_var_name' empty in step {idx + 1}. Skipping.")
+            else:
+                execution_name = step["name"]
+                execution_value = step["value"]
+                if not execution_name:
+                    logging.debug(f"     [!] 'execution_name' empty in step {idx + 1}. Skipping.")
                     continue
 
-                logging.debug(f"     [SimVar] Writing '{sim_name}' = {sim_val} | Repeats: {repeats}")
+                logging.debug(f"     [SimVar] Writing '{execution_name}' = {execution_value} | Repeats: {repeats}")
                 for r in range(repeats):
                     try:
-                        aircraft.set(sim_name, sim_val)
-                        triggered = True
-                        logging.debug(f"       -> Written {sim_name} = {sim_val} (Repetition {r + 1}/{repeats})")
-                        logging.info(f"       -> fffffffffffffffffffffffffffffffffffffff == {aircraft.get('BRAKE_LEFT_POSITION')}")
+                        if step_type == "sim_var":
+                            aircraft_requests.set(execution_name, execution_value)
+                        elif step_type == "sim_event":
+                            event_obj = aircraft_events.find(execution_name)
+                            event_obj(int(execution_value))
+
+                        logging.debug(f"       -> Written {execution_name} = {execution_value} (Repetition {r + 1}/{repeats})")
+
                         if delay_sec > 0:
                             time.sleep(delay_sec)
+
                     except Exception as e:
-                        logging.error(f"     [Error] Error writing sim_var {sim_name}: {e}")
+                        logging.error(f"     [Error] Error writing sim_var {execution_name}: {e}")
 
                     if delay_sec > 0:
                         time.sleep(delay_sec)
 
         logging.info(f"[Action {self.action_id}] Execution sequence finished.")
-        return triggered
 
 
     def _check_conditions(self, conditions: List[Dict[str, Any]], aircraft: Any) -> bool:
@@ -394,28 +367,5 @@ class KeyInput(InputBinding):
         ctrl_ok = keyboard.is_pressed("ctrl") == self.ctrl
         alt_ok = keyboard.is_pressed("alt") == self.alt
 
-        # if keyboard.is_pressed(57):
-
-        # logging.debug('****************************************************************************')
-        # logging.debug('keyboard.is_pressed("shift") = ' + str(keyboard.is_pressed("shift")))
-        # logging.debug('keyboard.is_pressed("ctrl") = ' + str(keyboard.is_pressed("ctrl")))
-        # logging.debug('keyboard.is_pressed("alt") = ' + str(keyboard.is_pressed("alt")))
-        # logging.debug('self.shift ' + str(self.shift))
-        # logging.debug('self.ctrl ' + str(self.ctrl))
-        # logging.debug('self.alt ' + str(self.alt))
-        # logging.debug('space PRESSED!!!!!!!!!!!!')
-        # logging.debug('----------------------')
-        # logging.debug('----------------------')
-        # logging.debug('shift_ok) = ' + str(shift_ok))
-        # logging.debug('ctrl_ok) = ' + str(ctrl_ok))
-        # logging.debug('alt_ok) = ' + str(alt_ok))
-        # logging.debug('----------------------')
-        # logging.debug('-------------------------------------------------------------------------')
-        # logging.debug('keyboard.is_pressed("shift") = ' + str(keyboard.is_pressed("shift")))
-        # logging.debug('keyboard.is_pressed("ctrl") = ' + str(keyboard.is_pressed("ctrl")))
-        # logging.debug('keyboard.is_pressed("alt") = ' + str(keyboard.is_pressed("alt")))
-        # logging.debug('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-
         if keyboard.is_pressed(self.key_code) and shift_ok and ctrl_ok and alt_ok:
-            # logging.debug('returning trueeeeeeeeee')
             return True

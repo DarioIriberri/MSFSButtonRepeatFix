@@ -2,20 +2,20 @@ import time
 import pygame
 import traceback
 import logging
-from typing import Dict, Optional, Any
+import ctypes, psutil
 from actions import Action
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Optional
 
 class BaseControl:
     @staticmethod
-    def create(ctrl_elem: Any, joysticks: Dict, aircraft_requests, sim_lock) -> "BaseControl":
+    def create(ctrl_elem: Any, joysticks: Dict, aircraft_requests, aircraft_events, sim_lock) -> "BaseControl":
         ctrl_type = ctrl_elem.get("type", "analog")
 
         if ctrl_type == "analog":
-            return AnalogControl(ctrl_elem, joysticks, aircraft_requests, sim_lock)
+            return AnalogControl(ctrl_elem, joysticks, aircraft_requests, aircraft_events, sim_lock)
         elif ctrl_type == "discrete":
-            return DiscreteControl(ctrl_elem, joysticks, aircraft_requests, sim_lock)
+            return DiscreteControl(ctrl_elem, joysticks, aircraft_requests, aircraft_events, sim_lock)
         else:
             raise ValueError(f"Unknown control type: {ctrl_type}")
 
@@ -24,13 +24,24 @@ class BaseControl:
             ctrl_elem: ET.Element,
             joysticks_dict: Dict[str, Any],
             aircraft_requests: Any,
+            aircraft_events: Any,
             sim_lock: Any
     ) -> None:
 
         self.id: str = ctrl_elem.get("id")
-        self.sim_variables: List[str] = [
-            elem.text.strip() for elem in ctrl_elem.findall("sim_variable") if elem.text
+
+        execution_elem = ctrl_elem.find("execution")
+
+        # Initialize the execution type ('sim_var', 'sim_event', etc.)
+        self.execution_type: str = execution_elem.get("type") if execution_elem is not None else ""
+
+        # Extract all names into a single list regardless of the type
+        self.execution_vars: List[str] = [
+            elem.text.strip()
+            for elem in (execution_elem.findall("name") if execution_elem is not None else [])
+            if elem.text
         ]
+
         self.control_type: str = ctrl_elem.get("type")
         self.actions: Dict[str, Action] = {}
         self.repeat: bool = (ctrl_elem.find("repeat").text.strip().lower() == "true") if ctrl_elem.find("repeat") is not None and ctrl_elem.find("repeat").text else False
@@ -42,11 +53,17 @@ class BaseControl:
 
         self.actions: Dict[str, Action] = actions
 
-        self.init_value: float = float(ctrl_elem.find("init_value").text) if ctrl_elem.find("init_value") is not None else 0
         self.joysticks_dict = joysticks_dict
         self.aircraft_requests = aircraft_requests
+        self.aircraft_events = aircraft_events
 
-        temp_current_val = self.aircraft_requests.get(self.sim_variables[0]) if self.sim_variables else None
+        self.init_value: float = float(ctrl_elem.find("init_value").text) if ctrl_elem.find("init_value") is not None else 0
+        # Fetch initial value from SimConnect only if execution type is 'sim_var' and variables exist
+        temp_current_val = (
+            self.aircraft_requests.get(self.execution_vars[0])
+            if self.execution_type == "sim_var" and self.execution_vars
+            else None
+        )
         self.current_value = temp_current_val if temp_current_val is not None else self.init_value
 
         self.last_active_action = None
@@ -91,16 +108,41 @@ class BaseControl:
 
         logging.info(f"Thread for control {self.id} terminated cleanly.")
 
+    def execute_var(self, var_type, var_name, var_value):
+        if var_type == "sim_var":
+            self.aircraft_requests.set(var_name, var_value)
+        elif var_type == "sim_event":
+            event_obj = self.aircraft_events.find(var_name)
+            event_obj(int(var_value))
+
+    def is_msfs_active(self) -> bool:
+        """Retrieves the title of the active window using the Windows API via ctypes."""
+        try:
+            hwnd = ctypes.windll.user32.GetForegroundWindow()
+            if not hwnd:
+                return False
+
+            pid = ctypes.c_ulong()
+            ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+
+            process = psutil.Process(pid.value)
+            return process.name().lower() == "flightsimulator.exe"
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            return False
+        except Exception:
+            return False
+
 class AnalogControl(BaseControl):
     def __init__(
             self,
             ctrl_elem: ET.Element,
             joysticks_dict: Dict[str, Any],
             aircraft_requests: Any,
+            aircraft_events: Any,
             sim_lock: Any
     ) -> None:
 
-        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests, sim_lock)
+        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests, aircraft_events, sim_lock)
         self.step_fine: float = float(ctrl_elem.find("step_fine").text) if ctrl_elem.find("step_fine") is not None else 0
         self.step_medium: float = float(ctrl_elem.find("step_medium").text) if ctrl_elem.find("step_medium") is not None else self.step_fine
         self.step_fast: float = float(ctrl_elem.find("step_fast").text) if ctrl_elem.find("step_fast") is not None else self.step_medium
@@ -142,12 +184,12 @@ class AnalogControl(BaseControl):
     def update(self, dt: float) -> None:
         active_action_obj, was_active_action = self._find_active_action()
 
-        if active_action_obj and (self.repeat or not was_active_action):
+        if active_action_obj and self.is_msfs_active() and (self.repeat or not was_active_action):
             self.last_active_action = active_action_obj
             # trigger_info = active_action_obj.get_active_trigger_description()
             live_value = None
-            if not active_action_obj.ignore_live_value:
-                live_value = self.aircraft_requests.get(self.sim_variables[0])
+            if not active_action_obj.ignore_live_value and self.execution_type == "sim_var":
+                live_value = self.aircraft_requests.get(self.execution_vars[0])
                 self.current_value = live_value
                 # logging.debug(f"LIVE VALUE ============= {live_value}")
 
@@ -156,9 +198,9 @@ class AnalogControl(BaseControl):
                 self.press_timers[active_action_obj.action_id] += dt
                 duration = self.press_timers[active_action_obj.action_id]
 
-                for sim_variable in self.sim_variables:
+                for execution_variable in self.execution_vars:
                     if active_action_obj.forced_value_on_press is not None:
-                        logging.info(f"FORCING VALUE!!!!!!!!!!!!! {sim_variable} --- {self.current_value}")
+                        logging.info(f"FORCING VALUE!!!!!!!!!!!!! {execution_variable} --- {self.current_value}")
                         self.current_value = active_action_obj.forced_value_on_press
                     else:
                         step = self.step_fine
@@ -177,28 +219,30 @@ class AnalogControl(BaseControl):
                         self.current_value += step
                         self.current_value = max(self.current_value, self.min_value)
                         self.current_value = min(self.current_value, self.max_value)
-                        logging.info(f"{sim_variable} --- step = {step} --- current.value = {self.current_value}")
+                        logging.debug(f"{execution_variable} --- step = {step} --- current.value = {self.current_value}")
                     try:
                         if active_action_obj.ignore_live_value or self.current_value != live_value:
                             # logging.debug(f"Elaped =========== {time.time() - self.t1}")
-                            self.aircraft_requests.set(sim_variable, self.current_value)
+                            self.execute_var(self.execution_type, execution_variable, self.current_value)
                             self.t1 = time.time()
                     except Exception as e:
-                        logging.error(f"Error writing {sim_variable}: {e}")
+                        logging.error(f"Error writing {execution_variable}: {e}")
         else:
             if self.last_active_action is not None:
+                logging.info(f"{self.id} --- current.value = {self.current_value}")
                 if self.last_active_action.forced_value_on_release is not None:
                     self.current_value = self.last_active_action.forced_value_on_release
-                    for sim_variable in self.sim_variables:
+                    for execution_variable in self.execution_vars:
                         try:
-                            self.aircraft_requests.set(sim_variable, self.last_active_action.forced_value_on_release)
+                            self.execute_var(self.execution_type, execution_variable, self.current_value)
                         except Exception as e:
-                            logging.error(f"Error writing {sim_variable}: {e}")
+                            logging.error(f"Error writing {execution_variable}: {e}")
 
                 for act_id in self.press_timers:
                     self.press_timers[act_id] = 0.0
 
                 self.last_active_action = None
+
 
     def _check_speed_multiplier(self, joysticks_dict: Dict[str, Any]) -> float:
         mult_cfg = self.speed_multiplier_config
@@ -226,31 +270,30 @@ class AnalogControl(BaseControl):
 
         return 1.0
 
+
 class DiscreteControl(BaseControl):
     def __init__(
             self,
             ctrl_elem: ET.Element,
             joysticks_dict: Dict[str, Any],
             aircraft_requests,
+            aircraft_events,
             sim_lock: Any
     ) -> None:
 
-        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests, sim_lock)
+        super().__init__(ctrl_elem, joysticks_dict, aircraft_requests, aircraft_events, sim_lock)
+
 
     def update(self, dt: float) -> None:
         try:
             active_action_obj, was_active_action = self._find_active_action()
 
-            if active_action_obj and (self.repeat or not was_active_action):
-                for sim_variable in self.sim_variables:
+            if active_action_obj and self.is_msfs_active() and (self.repeat or not was_active_action):
+                for execution_var in self.execution_vars:
                     if active_action_obj.ctrl_value:
-                        self.aircraft_requests.set(sim_variable, active_action_obj.ctrl_value)
+                        self.execute_var(self.execution_type, execution_var, active_action_obj.ctrl_value)
 
-                triggered = active_action_obj.execute(self.aircraft_requests)
-                #
-                # if triggered:
-                #     trigger_info = active_action_obj.get_active_trigger_description()
-                #     logging.debug(f"{active_action_obj.action_id} [{trigger_info}] --- {self.current_value}")
+                active_action_obj.execute(self.aircraft_requests, self.aircraft_events)
 
         except Exception as e:
-            logging.error(f"Error writing {self.sim_variables}: {e}")
+            logging.error(f"Error writing {self.execution_vars}: {e}")

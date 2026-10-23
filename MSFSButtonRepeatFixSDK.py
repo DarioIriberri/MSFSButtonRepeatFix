@@ -8,7 +8,7 @@ import logging
 from time import sleep
 
 import pygame
-from SimConnect import SimConnect, AircraftRequests
+from SimConnect import SimConnect, AircraftRequests, AircraftEvents
 import xml.etree.ElementTree as ET
 from typing import Dict, Any
 from controls import BaseControl
@@ -22,6 +22,7 @@ DEBUG_MODE = False
 _msfs_is_running = True
 _active_aircraft = ""
 
+
 class ControlWrapper:
     def __init__(self, control_id: str, control_obj: BaseControl, control_thread: threading.Thread) -> None:
         self.control_id = control_id
@@ -29,7 +30,7 @@ class ControlWrapper:
         self.control_thread = control_thread
 
 
-def load_configurations(joysticks_dict: Dict[str, Any], aircraft_requests) -> Dict[str, ControlWrapper]:
+def load_configurations(joysticks_dict: Dict[str, Any], aircraft_requests, aircraft_events) -> Dict[str, ControlWrapper]:
     global _active_aircraft
 
     """Load default control configurations and override with specific aircraft mappings if available."""
@@ -54,7 +55,7 @@ def load_configurations(joysticks_dict: Dict[str, Any], aircraft_requests) -> Di
             ctrl_id = ctrl_elem.get("id")
             controls[ctrl_id] = ControlWrapper(
                 ctrl_id,
-                BaseControl.create(ctrl_elem, joysticks_dict, aircraft_requests, sim_lock),
+                BaseControl.create(ctrl_elem, joysticks_dict, aircraft_requests, aircraft_events, sim_lock),
                 None
             )
 
@@ -75,7 +76,7 @@ def load_configurations(joysticks_dict: Dict[str, Any], aircraft_requests) -> Di
             for ctrl_elem in aircraft_root.findall("control"):
                 ctrl_id = ctrl_elem.get("id")
                 # Overwrite or add specific controls for this aircraft
-                controls[ctrl_id] = ControlWrapper(ctrl_id, BaseControl.create(ctrl_elem, joysticks_dict, aircraft_requests, sim_lock),None)
+                controls[ctrl_id] = ControlWrapper(ctrl_id, BaseControl.create(ctrl_elem, joysticks_dict, aircraft_requests, aircraft_events, sim_lock),None)
                 logging.info(f"Loaded control '{ctrl_id}' with specific aircraft configuration.")
         else:
             logging.warning(
@@ -130,9 +131,10 @@ def setup_logging(debug_mode: bool = False) -> None:
     level = logging.DEBUG if debug_mode else logging.INFO
     logging.basicConfig(
         level=level,
-        format="%(asctime)s [%(levelname)s] [%(threadName)s] %(message)s",
+        format="%(asctime)s.%(msecs)03d [%(levelname)s] [%(threadName)s] %(message)s",
         datefmt="%H:%M:%S"
     )
+
 
 def monitor_msfs_process() -> None:
     """Background thread function to check if MSFS is running without blocking the main loop."""
@@ -155,6 +157,7 @@ def monitor_msfs_process() -> None:
 
         time.sleep(5)  # Check every 5 seconds without blocking main 60 FPS loop
 
+
 def monitor_active_aircraft(aq: AircraftRequests) -> None:
     """Background thread function to check if MSFS is running without blocking the main loop."""
     global _active_aircraft
@@ -166,13 +169,14 @@ def monitor_active_aircraft(aq: AircraftRequests) -> None:
     while _msfs_is_running:
         try:
             _active_aircraft = aq.get('TITLE')
-            logging.info(f"Active Aircraft is {_active_aircraft}")
+            # logging.info(f"Active Aircraft is {_active_aircraft}")
 
         except Exception:
             logging.error("FATAL ERROR IN ACTIVE AIRCRAFT MONITOR THREAD. CLOSING")
             traceback.print_exc()
 
         time.sleep(5)  # Check every 5 seconds without blocking main 60 FPS loop
+
 
 def kill_control_threads(controls: Dict[str, ControlWrapper]):
     for control_id, control in controls.items():
@@ -197,6 +201,7 @@ def main() -> None:
     # Initialize SimConnect bridge
     sm = SimConnect()
     aq = AircraftRequests(sm, _time=50)
+    ae = AircraftEvents(sm)
 
     # Start the background monitoring threads so it never blocks the 60 FPS main loop
     msfs_monitor_thread = threading.Thread(target=monitor_msfs_process, daemon=True)
@@ -218,19 +223,10 @@ def main() -> None:
         js.init()
         logging.info(f"Joystick detected: {js.get_name()} [GUID: {guid}]")
 
-    # Determine absolute path for resources whether running as script or frozen .exe
-    if getattr(sys, 'frozen', False):
-        base_path = os.path.dirname(sys.executable)
-    else:
-        base_path = os.path.dirname(os.path.abspath(__file__))
-
-    mappings_file = os.path.join(base_path, MAPPINGS_FILE_NAME)
-
     clock = pygame.time.Clock()
     logging.info("Starting OOP hardware bridge main loop...")
 
-
-    controls: Dict[str, ControlWrapper] = load_configurations(joysticks_dict=joysticks, aircraft_requests=aq)
+    controls: Dict[str, ControlWrapper] = load_configurations(joysticks_dict=joysticks, aircraft_requests=aq, aircraft_events=ae)
 
     previous_active_aircraft = _active_aircraft
     while _msfs_is_running:
@@ -240,7 +236,7 @@ def main() -> None:
 
         if _active_aircraft is not None and _active_aircraft != previous_active_aircraft:
             kill_control_threads(controls)
-            load_configurations(MAPPINGS_FILE_NAME, joysticks, aq)
+            load_configurations(joysticks, aq, ae)
             previous_active_aircraft = _active_aircraft
 
     # If background monitor detected MSFS closure, break loop
