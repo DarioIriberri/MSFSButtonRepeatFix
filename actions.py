@@ -251,6 +251,7 @@ class Action:
                         aircraft.set(sim_name, sim_val)
                         triggered = True
                         logging.debug(f"       -> Written {sim_name} = {sim_val} (Repetition {r + 1}/{repeats})")
+                        logging.info(f"       -> fffffffffffffffffffffffffffffffffffffff == {aircraft.get('BRAKE_LEFT_POSITION')}")
                         if delay_sec > 0:
                             time.sleep(delay_sec)
                     except Exception as e:

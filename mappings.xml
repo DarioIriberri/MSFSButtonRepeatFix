@@ -2,7 +2,7 @@
 <config>
 	<control id="elevator_trim" type="analog">	
 		<sim_variable>ELEVATOR_TRIM_POSITION</sim_variable>
-		<action id ="elevator_trim_up">
+		<action id="elevator_trim_up">
 			<direction>1</direction>
 			<joystick_mapping>
 				<joystick_name>T.Flight Stick X</joystick_name>
@@ -69,7 +69,7 @@
 	
 	<control id="rudder_trim" type="analog">	
 		<sim_variable>RUDDER_TRIM_PCT</sim_variable>
-		<action id ="rudder_trim_left">
+		<action id="rudder_trim_left">
 			<direction>-1</direction>
 			<joystick_mapping>
 				<joystick_name>T.Flight Stick X</joystick_name>
@@ -105,7 +105,7 @@
 	
 	<control id="cockpit_zoom" type="analog">	
 		<sim_variable>COCKPIT_CAMERA_ZOOM</sim_variable>
-		<action id ="cockpit_zoom_in">
+		<action id="cockpit_zoom_in">
 			<direction>1</direction>
 			<joystick_mapping>
 				<joystick_name>T.Flight Stick X</joystick_name>
@@ -147,7 +147,7 @@
     </control>
 	
 	<control id="brakes" type="discrete">	
-		<action id ="increase_brake">
+		<action id="increase_brake">
 			<joystick_mapping>
 				<joystick_name>T.Flight Stick X</joystick_name>
 				<joystick_guid></joystick_guid>
@@ -180,7 +180,7 @@
 	<!--control id="brakes" type="analog">	
 		<sim_variable>BRAKE_LEFT_POSITION</sim_variable>
 		<sim_variable>BRAKE_RIGHT_POSITION</sim_variable>
-		<action id ="increase_brake">
+		<action id="increase_brake">
 			<direction>1</direction>
 			<ignore_live_value>true</ignore_live_value>
 			<forced_value_on_release>0</forced_value_on_release>
@@ -206,7 +206,7 @@
     </control-->
 
 	<control id="center_view_and_freelook_reset_key" type="discrete">
-		<action id ="center_view_and_freelook_reset">
+		<action id="center_view_and_freelook_reset">
 			<!--joystick_mapping>
 				<joystick_name>T.Flight Stick X</joystick_name>
 				<joystick_guid></joystick_guid>
@@ -270,7 +270,7 @@
 	</control>
 	
 	<control id="center_view_and_freelook_reset_button" type="discrete">
-		<action id ="center_view_and_freelook_reset">
+		<action id="center_view_and_freelook_reset">
 			<joystick_mapping>
 				<joystick_name>T.Flight Stick X</joystick_name>
 				<joystick_guid></joystick_guid>
@@ -304,7 +304,7 @@
 	</control>
 	
 	<control id="cockpit_eyepoint_left" type="discrete">
-		<action id ="cockpit_eyepoint_left">
+		<action id="cockpit_eyepoint_left">
 			<key_mapping>
 				<key>left</key>
 				<shift>false</shift> 
@@ -322,7 +322,7 @@
 	</control>
 	
 	<control id="cockpit_eyepoint_right" type="discrete">
-		<action id ="cockpit_eyepoint_right">
+		<action id="cockpit_eyepoint_right">
 			<key_mapping>
 				<key>right</key>
 				<shift>false</shift> 
@@ -340,7 +340,7 @@
 	</control>
 	
 	<control id="cockpit_eyepoint_up" type="discrete">
-		<action id ="cockpit_eyepoint_up">
+		<action id="cockpit_eyepoint_up">
 			<key_mapping>
 				<key>up</key>
 				<shift>false</shift> 
@@ -358,7 +358,7 @@
 	</control>
 	
 	<control id="cockpit_eyepoint_down" type="discrete">
-		<action id ="cockpit_eyepoint_down">
+		<action id="cockpit_eyepoint_down">
 			<key_mapping>
 				<key>down</key>
 				<shift>false</shift> 
@@ -376,7 +376,7 @@
 	</control>
 	
 	<control id="cockpit_eyepoint_forward" type="discrete">
-		<action id ="cockpit_eyepoint_forward">
+		<action id="cockpit_eyepoint_forward">
 			<key_mapping>
 				<key>up</key>
 				<shift>false</shift> 
@@ -394,7 +394,7 @@
 	</control>
 	
 	<control id="cockpit_eyepoint_backward" type="discrete">
-		<action id ="cockpit_eyepoint_backward">
+		<action id="cockpit_eyepoint_backward">
 			<key_mapping>
 				<key>down</key>
 				<shift>false</shift> 
@@ -411,6 +411,16 @@
 		<repeat>false</repeat>
 	</control>
 	
+	<aircraft_mappings>
+		<aircraft name="FBW A320 Neo">
+			<aircraft_id>Airbus A320neo Spantax 60s</aircraft_id>
+			<aircraft_id>Airbus A320neo Iberia</aircraft_id>
+		</aircraft>
+		<aircraft name="PMDG 738">
+			<aircraft_id>PMDG 737 Spantax</aircraft_id>
+			<aircraft_id>PMDG 737 American Airlines</aircraft_id>
+		</aircraft>
+	</aircraft_mappings>
 </config>
 
 <!--

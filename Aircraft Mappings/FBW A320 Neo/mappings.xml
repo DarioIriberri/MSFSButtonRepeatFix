@@ -1,0 +1,32 @@
+<config>
+	<control id="brakes" type="discrete">	
+		<action id="increase_brake">
+			<joystick_mapping>
+				<joystick_name>T.Flight Stick X</joystick_name>
+				<joystick_guid></joystick_guid>
+				<button_mapping>
+					<button>2</button>
+				</button_mapping>
+			</joystick_mapping>
+			<key_mapping>
+				<key>num_0</key>
+				<shift>false</shift> 
+				<ctrl>false</ctrl>
+				<alt>false</alt>
+			</key_mapping>
+			<execution type="sim_var">
+				<sim_var_name>BRAKE_LEFT_POSITION</sim_var_name>
+				<repeats>1</repeats>
+				<value>1</value>
+				<delay_ms_after_pressed>10</delay_ms_after_pressed>
+			</execution>
+			<execution type="sim_var">
+				<sim_var_name>BRAKE_RIGHT_POSITION</sim_var_name>
+				<repeats>1</repeats>
+				<value>1</value>
+				<delay_ms_after_pressed>10</delay_ms_after_pressed>
+			</execution>			
+		</action>
+		<repeat>true</repeat>
+	</control>
+</config>
