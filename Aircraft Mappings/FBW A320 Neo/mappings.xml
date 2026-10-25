@@ -18,7 +18,8 @@
 		<init_value>-16383</init_value>
 		<min_value>-16383</min_value>
 		<max_value>16384</max_value>
-        <step_fine>100</step_fine>
+        <step_fine>200</step_fine>
+        <!--step_fine>100</step_fine>
         <step_medium>200</step_medium>
         <step_fast>400</step_fast>
         <time_threshold_1>0.2</time_threshold_1>
@@ -26,6 +27,6 @@
 		<speed_multiplier>
 			<key_multiplier>shift</key_multiplier>
 			<multiplier_factor>2</multiplier_factor>
-		</speed_multiplier>
+		</speed_multiplier-->
 	</control>
 </config>

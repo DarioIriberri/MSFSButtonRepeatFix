@@ -179,13 +179,14 @@ def monitor_active_aircraft(aq: AircraftRequests) -> None:
 
 
 def kill_control_threads(controls: Dict[str, ControlWrapper]):
-    for control_id, control in controls.items():
-        # Signal all control threads to stop
-        control.control_obj.running = False
-        # Wait for all threads to finish gracefully
-        # control.control_thread.join(timeout=0)
-        logging.info(f"Waiting for control thread {control_id} to die...")
-        control.control_thread.join()
+    if controls:
+        for control_id, control in controls.items():
+            # Signal all control threads to stop
+            control.control_obj.running = False
+            # Wait for all threads to finish gracefully
+            # control.control_thread.join(timeout=0)
+            logging.info(f"Waiting for control thread {control_id} to die...")
+            control.control_thread.join()
 
     logging.info("All control threads successfully killed...")
 
@@ -226,15 +227,19 @@ def main() -> None:
     clock = pygame.time.Clock()
     logging.info("Starting OOP hardware bridge main loop...")
 
-    controls: Dict[str, ControlWrapper] = load_configurations(joysticks_dict=joysticks, aircraft_requests=aq, aircraft_events=ae)
+    controls = None
+    previous_active_aircraft = None
 
-    previous_active_aircraft = _active_aircraft
+    if _active_aircraft is not None and _active_aircraft.strip() != "":
+        controls: Dict[str, ControlWrapper] = load_configurations(joysticks_dict=joysticks, aircraft_requests=aq, aircraft_events=ae)
+        previous_active_aircraft = _active_aircraft
+
     while _msfs_is_running:
         # Refresh Pygame events and joystick states safely on the main thread
         pygame.event.pump()
         clock.tick(POLLING_FREQUENCY) / 1000.0  # Calculate delta time in seconds
 
-        if _active_aircraft is not None and _active_aircraft != previous_active_aircraft:
+        if _active_aircraft is not None and  _active_aircraft.strip() != "" and _active_aircraft != previous_active_aircraft:
             kill_control_threads(controls)
             load_configurations(joysticks, aq, ae)
             previous_active_aircraft = _active_aircraft
