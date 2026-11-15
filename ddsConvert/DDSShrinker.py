@@ -11,6 +11,8 @@ BASE_DIR = Path(r"C:/ddsConvert")
 TEXCONV_PATH = BASE_DIR / "C:/ddsConvert/texconv.exe"
 CONFIG_SRC = BASE_DIR / ".last_src"
 CONFIG_DST = BASE_DIR / ".last_dst"
+FORCED_DDS_FORMAT = None
+# FORCED_DDS_FORMAT = "BC1_UNORM"
 
 # Mapa de tamaños en bytes -> (resolución_origen, formato_texconv)
 SIZE_MAP = {
@@ -102,6 +104,9 @@ def main():
     total_new_bytes = 0
 
     for index, file_path in enumerate(dds_files, start=1):
+        if any(sufix in file_path.name.upper() for sufix in ["_NORMAL", "_NORM", "_NOMAL", "_COMP", "_MTL", "_METALIC", "_LM"]):
+            continue  # Saltar y no tocar
+
         orig_size = file_path.stat().st_size
         progress_pct = (index / total_files) * 100
 
@@ -116,6 +121,9 @@ def main():
         orig_res, dds_format = config
         target_res = orig_res // 2
         output_file_path = dst_dir / file_path.name
+
+        if FORCED_DDS_FORMAT is not None:
+            dds_format = FORCED_DDS_FORMAT
 
         cmd = [
             str(TEXCONV_PATH),
@@ -236,7 +244,7 @@ def main():
                     print(f"  [ERROR] Hubo un problema al ejecutar el script de backup: {e}")
             else:
                 print(f"  [ERROR] No se encuentra el archivo en la ruta: {backup_script_path}")
-                
+
     else:
         print("\n📁 Los archivos convertidos se quedan únicamente en la carpeta de destino.")
 
